@@ -9,11 +9,18 @@ on:
 jobs:
   test:
     name: 测试 + 打包
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.11", "3.13"]
+        # ubuntu-latest(24.04) 已不提供 3.8，3.8 只能留在 22.04 上验
+        include:
+          - python-version: "3.8"
+            os: ubuntu-22.04
+          - python-version: "3.11"
+            os: ubuntu-latest
+          - python-version: "3.13"
+            os: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 

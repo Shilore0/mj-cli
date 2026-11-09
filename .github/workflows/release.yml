@@ -44,5 +44,18 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*
-          generate_release_notes: true
           fail_on_unmatched_files: true
+          body: |
+            **安装**
+
+            ```bash
+            # Debian / Ubuntu
+            sudo dpkg -i mj-cli_*.deb
+
+            # Fedora / RHEL / Rocky / openSUSE
+            sudo rpm -ivh mj-cli-*.rpm
+            ```
+
+            装完敲 `mj`（默认静音）或 `MJ`（默认带音乐）回车；想反转用 `--audio` / `--no-audio`。
+
+            完整变更见 [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)。
