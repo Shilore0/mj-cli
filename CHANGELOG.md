@@ -2,6 +2,19 @@
 
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循语义化版本。
 
+## [Unreleased]
+
+### 新增
+
+- Windows / PowerShell 支持：`bin/mj.cmd` 启动器，`install.ps1` / `uninstall.ps1`（改用户 PATH）。
+- 音效新增 `winsound` 后端：Windows 自带，不需要外部播放器。
+- 传统 conhost 自动打开 VT 转义（`mj/win_console.py`），否则会显示原始 ANSI 序列。
+
+### 修复
+
+- Windows 上命令名不区分大小写，启动器改用 `%~0` 读取你实际敲的大小写，
+  `MJ` 仍能自动带音乐；被规范化时可用 `--audio` 显式出声。
+
 ## [1.0] - 2026-11-09
 
 首个正式版本。

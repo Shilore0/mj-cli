@@ -11,6 +11,8 @@ import sys
 import time
 import zlib
 
+from . import win_console
+
 ENTER_ALT = "\x1b[?1049h"
 LEAVE_ALT = "\x1b[?1049l"
 HIDE_CURSOR = "\x1b[?25l"
@@ -69,6 +71,8 @@ class TerminalStage:
         prefixes = [f"\x1b[{spot['row'] + i};{spot['col']}H" for i in range(spot["rows"])]
         clip = spot["rows"]
 
+        # Windows 的传统 conhost 需要显式打开 VT 转义，否则会看到原始的 ←[38;2;...
+        vt = win_console.VirtualTerminal(out).enable()
         out.write(ENTER_ALT + CLEAR + HIDE_CURSOR)
         out.flush()
         interval = 1.0 / fps
@@ -94,3 +98,4 @@ class TerminalStage:
                 out.flush()
             except (BrokenPipeError, ValueError, OSError):
                 pass
+            vt.restore()

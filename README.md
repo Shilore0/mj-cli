@@ -50,6 +50,35 @@ git clone https://github.com/Shilore0/mj-cli.git && cd mj-cli
 要求：Linux + Python ≥ 3.8 + 一个支持 24 位真彩色的终端。
 不装也能用：`python3 bin/mj` 或 `python3 -m mj`。
 
+## 在 Windows / PowerShell 里跑
+
+虚拟机上没声音，通常是没装音频驱动（没有 `/dev/snd`）；想听声音就在 Windows 侧跑：
+
+```powershell
+cd C:\path\to\mj-cli
+powershell -ExecutionPolicy Bypass -File .\install.ps1   # 把 bin 加进用户 PATH
+```
+
+然后：
+
+```powershell
+mj            # 静音（小写）
+MJ            # 带音乐（大写）
+mj --audio    # 大写没生效时用这个，一定能出声
+```
+
+细节：
+
+- **声音**用 Windows 自带的 `winsound` 异步播放，不需要装 ffplay / paplay 之类。
+- **颜色**：程序会给传统 conhost 临时打开 VT 转义（否则会看到 `←[38;2;...` 这种原始序列），
+  用 Windows Terminal 更省事。
+- **大小写**：Windows 命令不区分大小写，所以 `bin\mj.cmd` 会读 `%~0` 判断你敲的是 `mj` 还是 `MJ`；
+  万一被规范化了，`mj --audio` 效果一样。
+- **`--window` 不可用**：那是 Linux 的 GTK 悬浮窗，Windows 上会提示一句后走终端模式。
+- **中文乱码**：直接看没问题；但把 `mj --list` 之类接到管道（`|`）时，PowerShell 会用 GBK
+  解码 UTF-8 输出，先执行一次 `[Console]::OutputEncoding = [Text.Encoding]::UTF8` 即可。
+- 卸载：`powershell -ExecutionPolicy Bypass -File .\uninstall.ps1`（只改 PATH，不删文件）。
+
 ## 打包成 deb / rpm
 
 `dist/` 里已经打好两个包（内容一致，`all` / `noarch`）：
@@ -219,7 +248,9 @@ mj-cli/
 ├─ assets/                    # 构建产物（已提供）
 ├─ docs/                      # README 预览图
 ├─ tests/test_mj.py           # 单元测试
-├─ install.sh / uninstall.sh
+├─ bin/mj.cmd                 # Windows 启动器（cmd / PowerShell）
+├─ install.sh / uninstall.sh  # Linux（软链）
+├─ install.ps1 / uninstall.ps1 # Windows（改用户 PATH）
 ├─ Makefile                   # make test / assets / package / smoke
 ├─ .github/workflows/         # CI（测试+打包+真装）与发版
 └─ README.md / RELEASING.md / CONTRIBUTING.md / CHANGELOG.md / LICENSE / THIRD_PARTY_NOTICES.md
@@ -242,8 +273,10 @@ make smoke       # 在 Linux 上装一遍、验一遍、卸掉
 
 ## 平台说明
 
-- 终端模式在 Linux / macOS / Windows Terminal 下都能跑（需要真彩色支持）；
-  本文档只针对 Linux 做过验收。
+- 终端模式 Linux / macOS / Windows 都能跑；Linux 与 Windows（PowerShell / Windows Terminal）
+  已实测，macOS 未针对验收。
+- Windows 上用系统自带的 `winsound` 播放音效；Linux / macOS 上挑 PATH 里的
+  `pw-play` / `paplay` / `aplay` / `ffplay` / `mpv`，都没有就静音播放。
 - macOS 的 Terminal.app 不支持 24 位色（可改用 iTerm2 / WezTerm / kitty）。
 - 终端模式无法覆盖在其他窗口之上——它画在终端自己的屏幕缓冲区里。想要真正
   盖在桌面上的效果，用 `--window`。
