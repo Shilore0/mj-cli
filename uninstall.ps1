@@ -1,6 +1,8 @@
 ﻿# 从当前用户的 PATH 里移除 mj-cli\bin，并删掉 profile 里的 mj 函数块。
 #
 #   powershell -ExecutionPolicy Bypass -File uninstall.ps1
+#
+# 会同时清理 Windows PowerShell 5.1 与 PowerShell 7 的 profile。
 
 $ErrorActionPreference = 'Stop'
 
@@ -20,22 +22,27 @@ if ($kept.Count -eq $parts.Count) {
 
 $markBegin = '# >>> mj-cli >>>'
 $markEnd = '# <<< mj-cli <<<'
-$profilePath = $PROFILE.CurrentUserAllHosts
-if (-not $profilePath) { $profilePath = $PROFILE }
+$documents = [Environment]::GetFolderPath('MyDocuments')
+$targets = @(
+    (Join-Path $documents 'WindowsPowerShell\profile.ps1')   # 5.1
+    (Join-Path $documents 'PowerShell\profile.ps1')           # 7+
+    $PROFILE.CurrentUserAllHosts
+) | Where-Object { $_ } | Select-Object -Unique
 
-if (Test-Path $profilePath) {
+foreach ($profilePath in $targets) {
+    if (-not (Test-Path $profilePath)) { continue }
     $lines = Get-Content -Path $profilePath -Encoding UTF8
-    if ($lines -contains $markBegin) {
-        $out = @()
-        $inBlock = $false
-        foreach ($line in $lines) {
-            if ($line -eq $markBegin) { $inBlock = $true; continue }
-            if ($line -eq $markEnd) { $inBlock = $false; continue }
-            if (-not $inBlock) { $out += $line }
-        }
-        Set-Content -Path $profilePath -Value $out -Encoding UTF8
-        Write-Host "已从 $profilePath 移除 mj 函数块"
+    if ($lines -notcontains $markBegin) { continue }
+
+    $out = @()
+    $inBlock = $false
+    foreach ($line in $lines) {
+        if ($line -eq $markBegin) { $inBlock = $true; continue }
+        if ($line -eq $markEnd) { $inBlock = $false; continue }
+        if (-not $inBlock) { $out += $line }
     }
+    Set-Content -Path $profilePath -Value $out -Encoding UTF8
+    Write-Host "已从 $profilePath 移除 mj 函数"
 }
 
 Write-Host ""

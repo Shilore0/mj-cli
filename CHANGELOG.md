@@ -2,6 +2,18 @@
 
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循语义化版本。
 
+## [1.2] - 2026-11-09
+
+### 修复
+
+- `install.ps1` 只写入了 Windows PowerShell 5.1 的 profile，导致 PowerShell 7（`pwsh`）里
+  敲 `MJ` 仍然没声音。现在 5.1 与 7 的 profile 都会写入，`uninstall.ps1` 也会两处都清理。
+
+### 文档
+
+- README 新增「安装 / 更新 / 彻底删除」三个完整章节，Windows 安装单独成节
+  （含前置条件、脚本改了什么、常见差异）。
+
 ## [1.1] - 2026-11-09
 
 ### 新增

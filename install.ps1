@@ -37,8 +37,10 @@ $env:Path = "$bin;$env:Path"
 # ---------------------------------------------------------------------------
 # 在 PowerShell 里让 MJ 也带声音。
 # PowerShell 解析命令时会规范化大小写，直接调用 mj.cmd 拿不到你敲的是 mj 还是 MJ。
-# 所以在 profile 里放一个函数：$MyInvocation.InvocationName 保留原始大小写，
-# 是大写就补 --audio。
+# 所以在 profile 里放一个函数：$MyInvocation.InvocationName 保留原始大小写。
+#
+# Windows PowerShell 5.1 和 PowerShell 7 的 profile 不在同一个文件里，两个都要写，
+# 否则在 pwsh 里 MJ 就没声音。
 # ---------------------------------------------------------------------------
 $exe = Join-Path $bin 'mj.cmd'
 $markBegin = '# >>> mj-cli >>>'
@@ -54,26 +56,38 @@ $block = @(
     $markEnd
 )
 
-$profilePath = $PROFILE.CurrentUserAllHosts
-if (-not $profilePath) { $profilePath = $PROFILE }
-$profileDir = Split-Path -Parent $profilePath
-if ($profileDir -and -not (Test-Path $profileDir)) {
-    New-Item -ItemType Directory -Path $profileDir -Force | Out-Null
+$documents = [Environment]::GetFolderPath('MyDocuments')
+$targets = @()
+if (Get-Command powershell -ErrorAction SilentlyContinue) {
+    $targets += Join-Path $documents 'WindowsPowerShell\profile.ps1'   # 5.1
 }
+if (Get-Command pwsh -ErrorAction SilentlyContinue) {
+    $targets += Join-Path $documents 'PowerShell\profile.ps1'          # 7+
+}
+$targets += $PROFILE.CurrentUserAllHosts
+$targets = @($targets | Where-Object { $_ } | Select-Object -Unique)
 
-$existing = @()
-if (Test-Path $profilePath) {
-    $existing = Get-Content -Path $profilePath -Encoding UTF8
+foreach ($profilePath in $targets) {
+    $profileDir = Split-Path -Parent $profilePath
+    if ($profileDir -and -not (Test-Path $profileDir)) {
+        New-Item -ItemType Directory -Path $profileDir -Force | Out-Null
+    }
+
+    $existing = @()
+    if (Test-Path $profilePath) {
+        $existing = Get-Content -Path $profilePath -Encoding UTF8
+    }
+    # 先去掉旧块，保证可重复执行
+    $kept = @()
+    $inBlock = $false
+    foreach ($line in $existing) {
+        if ($line -eq $markBegin) { $inBlock = $true; continue }
+        if ($line -eq $markEnd) { $inBlock = $false; continue }
+        if (-not $inBlock) { $kept += $line }
+    }
+    Set-Content -Path $profilePath -Value ($kept + $block) -Encoding UTF8
+    Write-Host "已写入 mj 函数：$profilePath"
 }
-# 先去掉旧块，保证可重复执行
-$kept = @()
-$inBlock = $false
-foreach ($line in $existing) {
-    if ($line -eq $markBegin) { $inBlock = $true; continue }
-    if ($line -eq $markEnd) { $inBlock = $false; continue }
-    if (-not $inBlock) { $kept += $line }
-}
-Set-Content -Path $profilePath -Value ($kept + $block) -Encoding UTF8
 
 # 当前会话也立刻生效
 Invoke-Expression ($block -join "`n")
@@ -84,7 +98,7 @@ Write-Host "  mj            静音（小写）"
 Write-Host "  MJ            带音乐（大写）"
 Write-Host "  mj --audio    显式出声"
 Write-Host ""
-Write-Host "（已在 $profilePath 里加了一段 mj 函数，用来区分 MJ / mj；卸载会自动移除）"
+Write-Host "（新开的 PowerShell 窗口才会加载 profile；当前窗口已临时生效）"
 Write-Host ""
 Write-Host "提示：把 mj 的输出接管道（|）后中文可能乱码，先执行一次：" -ForegroundColor DarkGray
 Write-Host "      [Console]::OutputEncoding = [Text.Encoding]::UTF8" -ForegroundColor DarkGray

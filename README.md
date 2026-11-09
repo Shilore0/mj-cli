@@ -34,76 +34,146 @@ $ mj
 
 ## 安装
 
-**方式一：装包**（推荐，见下一节的 deb / rpm）
+三种方式，任选其一。装完敲 `mj` 回车就有彩蛋。
 
-**方式二：从源码装**（改代码即时生效）
+### Linux（源码，改代码即时生效）
 
 ```bash
 git clone https://github.com/Shilore0/mj-cli.git && cd mj-cli
 ./install.sh
 ```
 
-脚本只做两件事：给 `bin/mj` 加可执行位，然后把 `mj` 和 `MJ` 两个软链指向它
-（默认 `~/.local/bin`，可用 `MJ_BIN_DIR` 改）。卸载跑 `./uninstall.sh`，
-只删软链，不动仓库里任何文件。
+`install.sh` 会把 `mj`、`MJ` 两个软链指向 `bin/mj`（默认装到 `~/.local/bin`，
+可用 `MJ_BIN_DIR` 改），并提醒你把该目录加进 PATH。不装也能直接跑
+`python3 bin/mj`。
 
-要求：Linux + Python ≥ 3.8 + 一个支持 24 位真彩色的终端。
-不装也能用：`python3 bin/mj` 或 `python3 -m mj`。
+要求：Linux + Python ≥ 3.8 + 支持 24 位真彩色的终端。
 
-## Windows
+### Windows
 
-Windows 原生支持，`cmd` 和 PowerShell 都能用，不需要装任何音频工具。
+要求：Windows 10 / 11 + Python 3.8 以上（安装 Python 时勾选
+"Add python.exe to PATH"）。
+
+**1. 拿到源码**：`git clone https://github.com/Shilore0/mj-cli.git`，或从 Releases
+下载 zip 解压。
+
+**2. 在源码目录跑一次安装脚本**（不需要管理员权限）：
 
 ```powershell
 cd C:\path\to\mj-cli
-powershell -ExecutionPolicy Bypass -File .\install.ps1   # 把 bin 加进用户 PATH
+powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
-装完新开一个窗口：
+**3. 新开一个 PowerShell 或 cmd 窗口**（PATH 和 profile 都只对新进程生效），验证：
 
 ```powershell
-mj            # 静音（小写）
-MJ            # 带音乐（大写）
-mj --audio    # 显式出声
+mj --version
+mj            # 静音
+MJ            # 带音乐
 ```
 
-- **声音**用系统自带的 `winsound` 异步播放 WAV，`--explain` 里会显示 `player : winsound`。
-- **大小写**：Windows 命令本身不区分大小写，所以 `bin\mj.cmd` 从 `%~0` 取你实际敲的名字，
-  再通过 `MJ_AS` 环境变量传给程序；PowerShell 里则由 `install.ps1` 写进 profile 的 `mj` 函数
-  用 `$MyInvocation.InvocationName` 做同样的事。所以 `MJ` 在两边都能自动带音乐。
-- **颜色**：传统 conhost 默认不开 ANSI 转义，程序会自动打开并在退出时还原；Windows Terminal 无需处理。
-- **`--window` 不可用**：那是 Linux 的 GTK 悬浮窗，Windows 上会提示一句后走终端模式。
+脚本只改当前用户的两处，都能一键撤销（见「彻底删除」）：
+
+| 动作 | 位置 |
+|---|---|
+| 把 `bin` 加进**当前用户**的 PATH | 用户环境变量 `Path` |
+| 写一个 `mj` 函数，用来区分 `MJ` / `mj` | Windows PowerShell 5.1 与 PowerShell 7 的 profile，两处都写 |
+
+Windows 上的几点差别：
+
+- **声音**走系统自带的 `winsound`，不用装 ffplay / paplay；`mj --explain` 里会显示
+  `player : winsound`。
+- **控制台**：推荐 Windows Terminal；传统 conhost 也能用（程序会临时开启 ANSI 转义，
+  退出时还原）。
+- **`--window` 不支持**：那是 Linux 的 GTK 悬浮窗，会提示一句后走终端模式。
 - **中文乱码**：直接看没问题；把输出接到管道（`|`）时 PowerShell 会用 GBK 解码 UTF-8，
   先执行一次 `[Console]::OutputEncoding = [Text.Encoding]::UTF8`。
-- 卸载：`powershell -ExecutionPolicy Bypass -File .\uninstall.ps1`（移除 PATH 与 profile 里的函数）。
 
-## 打包成 deb / rpm
+### deb / rpm
 
-`dist/` 里已经打好两个包（内容一致，`all` / `noarch`）：
-
-| 文件 | 适用 |
-|---|---|
-| `mj-cli_1.1-1_all.deb` | Debian / Ubuntu / Mint … |
-| `mj-cli-1.1-1.noarch.rpm` | Fedora / RHEL / Rocky / Alma / openSUSE … |
+从 [Releases](https://github.com/Shilore0/mj-cli/releases) 下载，或用仓库里 `dist/` 的包：
 
 ```bash
-sudo dpkg -i dist/mj-cli_1.1-1_all.deb      # Debian 系
-sudo rpm -ivh dist/mj-cli-1.1-1.noarch.rpm  # RPM 系
+sudo dpkg -i mj-cli_1.2-1_all.deb      # Debian / Ubuntu / Mint
+sudo rpm -ivh mj-cli-1.2-1.noarch.rpm  # Fedora / RHEL / Rocky / openSUSE
 ```
 
-装完 `/usr/bin/mj`、`/usr/bin/MJ` 都是软链，指向 `/usr/lib/mj-cli/bin/mj`；
-程序与素材在 `/usr/lib/mj-cli/`，另有 man page `man mj`。
+装完 `/usr/bin/mj`、`/usr/bin/MJ` 都指向 `/usr/lib/mj-cli/bin/mj`，
+程序与素材在 `/usr/lib/mj-cli/`，另有 man page（`man mj`）。
 
-重新打包（纯 Python，不需要 `dpkg-deb` / `rpmbuild` / `fpm`，Windows 上也能打）：
+## 更新
+
+先看当前版本：`mj --version`。
+
+**源码安装（Linux）**
 
 ```bash
-python3 packaging/build_packages.py --verify   # 打两个 + 自检
-python3 packaging/build_packages.py --deb      # 只打 deb
+cd mj-cli && git pull     # 或者把新版本解压覆盖进来
+mj --version              # 软链没变，不需要重新安装
 ```
 
-在真实 Linux 上跑完整的安装 / 校验 / 卸载流程：`bash packaging/smoke-test.sh`，
-详细清单见 [packaging/TESTING.md](packaging/TESTING.md)；
-发布到 GitHub（自动发版、版本号约定、自查清单）见 [RELEASING.md](RELEASING.md)。
+**源码安装（Windows）**
+
+```powershell
+cd C:\path\to\mj-cli
+git pull                  # 或者覆盖文件
+```
+
+PATH 与 profile 都不用重装；只有把目录挪了位置才需要重跑 `install.ps1`。
+
+**deb / rpm**
+
+```bash
+sudo dpkg -i mj-cli_1.2-1_all.deb          # 直接装新包就是升级
+sudo rpm -Uvh mj-cli-1.2-1.noarch.rpm
+```
+
+> 涉及画面或素材的更新（例如 1.1 修掉的白线）必须连 `assets/` 一起换：
+> 源码方式 `git pull` 自带，包方式是装新包。只换代码不换素材，画面还是旧的。
+
+## 彻底删除
+
+### 源码安装（Linux）
+
+```bash
+cd mj-cli
+./uninstall.sh --purge     # 删 mj/MJ 两个软链 + 清掉 ~/.bashrc 里的 PATH 行（自动备份）
+hash -r                    # 刷新 bash 的命令缓存，否则可能还提示"未找到"
+command -v mj || echo 已清干净
+rm -rf mj-cli              # 连代码一起删
+```
+
+不用脚本的话，等价手写：
+
+```bash
+rm -f ~/.local/bin/mj ~/.local/bin/MJ
+sed -i '/\.local\/bin/d' ~/.bashrc
+hash -r
+```
+
+### 源码安装（Windows）
+
+```powershell
+cd C:\path\to\mj-cli
+powershell -ExecutionPolicy Bypass -File .\uninstall.ps1
+```
+
+它会把 `bin` 从**用户 PATH** 里移除，并删掉两个 PowerShell profile 里的 `mj` 函数块
+（删完开新窗口验证）。之后直接删掉整个文件夹即可。
+
+### deb / rpm
+
+```bash
+sudo dpkg -r mj-cli          # 连配置一起清：sudo dpkg --purge mj-cli
+sudo rpm -e mj-cli
+```
+
+确认删干净：
+
+```bash
+command -v mj || echo 命令已移除
+ls /usr/lib/mj-cli 2>/dev/null || echo 目录已删除
+```
 
 ## 用法
 
@@ -256,6 +326,27 @@ mj-cli/
 ├─ .github/workflows/         # CI（测试+打包+真装）与发版
 └─ README.md / RELEASING.md / CONTRIBUTING.md / CHANGELOG.md / LICENSE / THIRD_PARTY_NOTICES.md
 ```
+
+## 打包（维护者）
+
+两个包内容一致（`all` / `noarch`），都装到 `/usr/lib/mj-cli/`，`/usr/bin` 下只放软链：
+
+| 文件 | 适用 |
+|---|---|
+| `mj-cli_1.2-1_all.deb` | Debian / Ubuntu / Mint / Kali … |
+| `mj-cli-1.2-1.noarch.rpm` | Fedora / RHEL / Rocky / Alma / openSUSE … |
+
+打包器是手写的（`ar` + `tar` + `cpio` + RPM header），不需要 `dpkg-deb`、
+`rpmbuild`、`fpm`，Windows 上也能出包：
+
+```bash
+python3 packaging/build_packages.py --verify   # 打两个 + 解开自检
+python3 packaging/build_packages.py --deb      # 只打 deb
+```
+
+在真实 Linux 上跑完整的安装 / 校验 / 卸载：`bash packaging/smoke-test.sh`，
+细节见 [packaging/TESTING.md](packaging/TESTING.md)；发版流程见
+[RELEASING.md](RELEASING.md)（推 `v*` tag 会自动打包并发布到 Releases）。
 
 ## 测试与开发
 
