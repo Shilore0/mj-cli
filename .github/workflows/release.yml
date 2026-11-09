@@ -3,6 +3,12 @@ name: release
 on:
   push:
     tags: ["v*"]
+  # 新仓库首次推 tag 时 Actions 可能还没注册，留个手动入口兜底
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "要发布的 tag（如 v1.0），手动触发时必填"
+        required: true
 
 permissions:
   contents: write
@@ -29,9 +35,10 @@ jobs:
       - name: 校验 tag 与代码里的版本一致
         run: |
           version=$(python -c "import sys; sys.path.insert(0,'.'); import mj; print(mj.__version__)")
-          tag="${GITHUB_REF_NAME#v}"
-          echo "tag=$tag version=$version"
-          test "$tag" = "$version" || { echo "::error::tag $GITHUB_REF_NAME 与 mj/__init__.py 的 $version 不一致"; exit 1; }
+          ref="${{ inputs.tag || github.ref_name }}"
+          tag="${ref#v}"
+          echo "ref=$ref version=$version"
+          test "$tag" = "$version" || { echo "::error::$ref 与 mj/__init__.py 的 $version 不一致"; exit 1; }
 
       - name: 创建 Release 并上传包
         uses: softprops/action-gh-release@v2
