@@ -15,10 +15,11 @@ DO_UNINSTALL=1
 
 fail=0
 pass=0
+fail_list=()
 
 step() { printf '\n\033[1;36m== %s ==\033[0m\n' "$*"; }
 ok()   { pass=$((pass + 1)); printf '  \033[32mok\033[0m   %s\n' "$*"; }
-bad()  { fail=$((fail + 1)); printf '  \033[31mFAIL\033[0m %s\n' "$*"; }
+bad()  { fail=$((fail + 1)); fail_list+=("$*"); printf '  \033[31mFAIL\033[0m %s\n' "$*"; }
 need() { if eval "$2" >/dev/null 2>&1; then ok "$1"; else bad "$1"; fi; }
 
 command -v python3 >/dev/null || { echo "缺少 python3"; exit 2; }
@@ -31,6 +32,7 @@ if command -v dpkg >/dev/null; then
 
   step "安装"
   sudo dpkg -i "$DEB" || { echo "dpkg 报错，尝试补依赖"; sudo apt-get -f install -y; }
+  hash -r   # 新装的命令要刷哈希，否则 command -v 可能查不到
 
   step "包信息"
   need "dpkg 状态为已安装" "dpkg -s mj-cli | grep -q 'Status: install ok installed'"
@@ -70,7 +72,8 @@ if command -v dpkg >/dev/null; then
   if [ "$DO_UNINSTALL" = 1 ]; then
     step "卸载"
     sudo dpkg -r mj-cli
-    need "命令已移除" "! command -v mj"
+    hash -r   # 删掉之后同样要刷，否则缓存里还留着旧路径
+    need "命令已移除" "! type -P mj"
     need "/usr/lib/mj-cli 已删除" "test ! -d /usr/lib/mj-cli"
     need "dpkg 列表里已无此包" "! dpkg -l mj-cli 2>/dev/null | grep -q '^ii'"
   fi
@@ -87,6 +90,7 @@ elif command -v rpm >/dev/null; then
 
   step "安装"
   sudo rpm -ivh "$RPM"
+  hash -r
 
   step "包信息"
   need "已安装" "rpm -q mj-cli"
@@ -122,7 +126,8 @@ elif command -v rpm >/dev/null; then
   if [ "$DO_UNINSTALL" = 1 ]; then
     step "卸载"
     sudo rpm -e mj-cli
-    need "命令已移除" "! command -v mj"
+    hash -r
+    need "命令已移除" "! type -P mj"
     need "/usr/lib/mj-cli 已删除" "test ! -d /usr/lib/mj-cli"
   fi
 
@@ -132,4 +137,12 @@ else
 fi
 
 printf '\n\033[1m结果：%d 项通过，%d 项失败\033[0m\n' "$pass" "$fail"
-[ "$fail" -eq 0 ]
+
+if [ "$fail" -ne 0 ]; then
+  # 这两行是 GitHub Actions 的注解指令，CI 里能直接在页面上看到失败项
+  for item in "${fail_list[@]}"; do
+    printf '::error title=smoke-test::%s\n' "$item"
+  done
+  exit 1
+fi
+exit 0
