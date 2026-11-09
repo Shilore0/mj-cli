@@ -75,7 +75,8 @@ python3 packaging/build_packages.py --deb      # 只打 deb
 ```
 
 虚拟机里的完整安装/校验/卸载流程：`bash packaging/smoke-test.sh`，
-详细清单见 [packaging/TESTING.md](packaging/TESTING.md)。
+详细清单见 [packaging/TESTING.md](packaging/TESTING.md)；
+发布到 GitHub（自动发版、版本号约定、自查清单）见 [RELEASING.md](RELEASING.md)。
 
 ## 用法
 
@@ -219,17 +220,25 @@ mj-cli/
 ├─ docs/                      # README 预览图
 ├─ tests/test_mj.py           # 单元测试
 ├─ install.sh / uninstall.sh
-└─ README.md / LICENSE / THIRD_PARTY_NOTICES.md
+├─ Makefile                   # make test / assets / package / smoke
+├─ .github/workflows/         # CI（测试+打包+真装）与发版
+└─ README.md / RELEASING.md / CONTRIBUTING.md / CHANGELOG.md / LICENSE / THIRD_PARTY_NOTICES.md
 ```
 
-## 测试
+## 测试与开发
 
 ```bash
-python3 -m unittest discover -s tests -v
+make test        # 或 python3 -m unittest discover -s tests -v
+make package     # 打 deb/rpm 并自检
+make smoke       # 在 Linux 上装一遍、验一遍、卸掉
 ```
 
-覆盖：抽签分布（4000 次）、允许连击、尺寸档位是否放得下、帧包几何
-（每帧行数/列宽）、深浅两套主题是否都构建了、渲染器对全透明/不透明帧的输出。
+改了渲染逻辑（`mj/render_cells.py`）或换了源片，要跑 `make assets` 重建帧包，
+否则包里的画面还是旧的。贡献流程见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
+测试覆盖：抽签分布（4000 次）、允许连击、尺寸档位是否放得下、帧包几何
+（每帧行数/列宽）、深浅两套主题是否都构建了、渲染器对全透明/不透明帧的输出、
+「小写静音 / 大写带音乐」的判定与参数优先级。
 
 ## 平台说明
 
