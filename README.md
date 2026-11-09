@@ -94,8 +94,8 @@ Windows 上的几点差别：
 从 [Releases](https://github.com/Shilore0/mj-cli/releases) 下载，或用仓库里 `dist/` 的包：
 
 ```bash
-sudo dpkg -i mj-cli_1.2-1_all.deb      # Debian / Ubuntu / Mint
-sudo rpm -ivh mj-cli-1.2-1.noarch.rpm  # Fedora / RHEL / Rocky / openSUSE
+sudo dpkg -i mj-cli_1.3-1_all.deb      # Debian / Ubuntu / Mint
+sudo rpm -ivh mj-cli-1.3-1.noarch.rpm  # Fedora / RHEL / Rocky / openSUSE
 ```
 
 装完 `/usr/bin/mj`、`/usr/bin/MJ` 都指向 `/usr/lib/mj-cli/bin/mj`，
@@ -124,8 +124,8 @@ PATH 与 profile 都不用重装；只有把目录挪了位置才需要重跑 `i
 **deb / rpm**
 
 ```bash
-sudo dpkg -i mj-cli_1.2-1_all.deb          # 直接装新包就是升级
-sudo rpm -Uvh mj-cli-1.2-1.noarch.rpm
+sudo dpkg -i mj-cli_1.3-1_all.deb          # 直接装新包就是升级
+sudo rpm -Uvh mj-cli-1.3-1.noarch.rpm
 ```
 
 > 涉及画面或素材的更新（例如 1.1 修掉的白线）必须连 `assets/` 一起换：
@@ -190,6 +190,7 @@ $ mj --window        # 开一个真正透明的桌面悬浮窗（见下）
 $ mj --list          # 看看有哪些彩蛋、多少帧、支持哪些尺寸
 $ mj --pick-only     # 只抽签不播放，用来验证概率
 $ mj --explain       # 打印抽到什么、有没有声音、用哪个素材
+$ mj --where         # 打印装在哪：程序目录、启动器、素材、Python、音频后端
 ```
 
 | 参数 | 说明 |
@@ -198,6 +199,7 @@ $ mj --explain       # 打印抽到什么、有没有声音、用哪个素材
 | `--list` | 列出彩蛋、帧数、尺寸档位 |
 | `--pick-only` | 只输出抽到的结果（脚本/测试友好） |
 | `--explain` | 不播放，打印彩蛋、声音开关及理由、音轨与播放器等 |
+| `--where` | 打印安装位置（排查「装到哪去了」用） |
 | `--audio` / `--sound` | 强制出声（小写 `mj` 默认静音） |
 | `--no-audio` | 强制静音（大写 `MJ` 默认有音乐） |
 | `--size N` | 精灵宽度上限（字符列数） |
@@ -333,8 +335,8 @@ mj-cli/
 
 | 文件 | 适用 |
 |---|---|
-| `mj-cli_1.2-1_all.deb` | Debian / Ubuntu / Mint / Kali … |
-| `mj-cli-1.2-1.noarch.rpm` | Fedora / RHEL / Rocky / Alma / openSUSE … |
+| `mj-cli_1.3-1_all.deb` | Debian / Ubuntu / Mint / Kali … |
+| `mj-cli-1.3-1.noarch.rpm` | Fedora / RHEL / Rocky / Alma / openSUSE … |
 
 打包器是手写的（`ar` + `tar` + `cpio` + RPM header），不需要 `dpkg-deb`、
 `rpmbuild`、`fpm`，Windows 上也能出包：

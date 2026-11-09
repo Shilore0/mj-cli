@@ -5,11 +5,13 @@ from __future__ import annotations
 import argparse
 import os
 import random
+import shutil
 import sys
+import unicodedata
 from pathlib import Path
 
 from . import __version__, audio, manifest, term, window
-from .paths import assets_dir
+from .paths import PROJECT_ROOT, assets_dir
 
 DESCRIPTION = """\
 在终端里复刻抖音的「MJ」彩蛋：每次触发都独立掷一次硬币，
@@ -53,6 +55,31 @@ def resolve_audio(force_on: bool, force_off: bool, name: str) -> tuple[bool, str
     return False, f"以小写 {os.path.basename(name) or 'mj'} 调用，默认静音（加 --audio 出声）"
 
 
+def _display_width(text: str) -> int:
+    """中日韩字符占两格，按显示宽度算，才能对齐。"""
+    return sum(2 if unicodedata.east_asian_width(ch) in ("W", "F") else 1 for ch in text)
+
+
+def print_where() -> None:
+    """打印"这东西到底装在哪"，方便自己排查。"""
+    launcher = os.path.abspath(sys.argv[0]) if sys.argv[0] else "(未知)"
+    found = shutil.which("mj") or shutil.which("MJ")
+    player = audio.find_player()
+    rows = [
+        ("版本", __version__),
+        ("程序目录", str(PROJECT_ROOT)),
+        ("启动器", launcher),
+        ("素材", str(assets_dir())),
+        ("Python", f"{sys.version.split()[0]}  {sys.executable}"),
+        ("音频后端", os.path.basename(player[0]) if player else "无（会静音播放）"),
+        ("PATH 里的 mj", found or "未找到（重开终端，或重跑安装脚本）"),
+    ]
+    width = max(_display_width(key) for key, _ in rows)
+    for key, value in rows:
+        pad = " " * (width - _display_width(key))
+        print(f"{key}{pad} : {value}")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="mj",
@@ -80,6 +107,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--pick-only", action="store_true", help="只输出抽签结果，不播放")
     parser.add_argument("--explain", action="store_true",
                         help="不播放，打印这次抽到的彩蛋、声音开关和素材路径")
+    parser.add_argument("--where", action="store_true",
+                        help="打印安装位置：程序目录、启动器、素材、Python、音频后端")
     parser.add_argument("--window", action="store_true",
                         help="用透明悬浮窗播放（失败自动退回终端）")
     parser.add_argument("--audio", "--sound", dest="audio", action="store_true",
@@ -102,6 +131,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+
+    if args.where:
+        print_where()
+        return 0
+
     base = assets_dir()
 
     try:
