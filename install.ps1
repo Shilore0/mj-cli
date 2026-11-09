@@ -34,14 +34,57 @@ if (-not $already) {
 # 当前会话立刻可用
 $env:Path = "$bin;$env:Path"
 
+# ---------------------------------------------------------------------------
+# 在 PowerShell 里让 MJ 也带声音。
+# PowerShell 解析命令时会规范化大小写，直接调用 mj.cmd 拿不到你敲的是 mj 还是 MJ。
+# 所以在 profile 里放一个函数：$MyInvocation.InvocationName 保留原始大小写，
+# 是大写就补 --audio。
+# ---------------------------------------------------------------------------
+$exe = Join-Path $bin 'mj.cmd'
+$markBegin = '# >>> mj-cli >>>'
+$markEnd = '# <<< mj-cli <<<'
+$block = @(
+    $markBegin
+    'function global:mj {'
+    "    `$exe = '$exe'"
+    '    $old = $env:MJ_AS'
+    "    if (`$MyInvocation.InvocationName -ceq 'MJ') { `$env:MJ_AS = 'MJ' }"
+    '    try { & $exe @args } finally { $env:MJ_AS = $old }'
+    '}'
+    $markEnd
+)
+
+$profilePath = $PROFILE.CurrentUserAllHosts
+if (-not $profilePath) { $profilePath = $PROFILE }
+$profileDir = Split-Path -Parent $profilePath
+if ($profileDir -and -not (Test-Path $profileDir)) {
+    New-Item -ItemType Directory -Path $profileDir -Force | Out-Null
+}
+
+$existing = @()
+if (Test-Path $profilePath) {
+    $existing = Get-Content -Path $profilePath -Encoding UTF8
+}
+# 先去掉旧块，保证可重复执行
+$kept = @()
+$inBlock = $false
+foreach ($line in $existing) {
+    if ($line -eq $markBegin) { $inBlock = $true; continue }
+    if ($line -eq $markEnd) { $inBlock = $false; continue }
+    if (-not $inBlock) { $kept += $line }
+}
+Set-Content -Path $profilePath -Value ($kept + $block) -Encoding UTF8
+
+# 当前会话也立刻生效
+Invoke-Expression ($block -join "`n")
+
 Write-Host ""
 Write-Host "现在可以敲："
 Write-Host "  mj            静音（小写）"
-Write-Host "  MJ            带音乐（大写，cmd 里可靠）"
-Write-Host "  mj --audio    大写不生效时用这个，一定能出声"
+Write-Host "  MJ            带音乐（大写）"
+Write-Host "  mj --audio    显式出声"
 Write-Host ""
-Write-Host "提示：Windows 命令不区分大小写，若 PowerShell 把 MJ 规范化成了 mj，"
-Write-Host "      就用 mj --audio，效果一样。"
+Write-Host "（已在 $profilePath 里加了一段 mj 函数，用来区分 MJ / mj；卸载会自动移除）"
 Write-Host ""
 Write-Host "提示：把 mj 的输出接管道（|）后中文可能乱码，先执行一次：" -ForegroundColor DarkGray
 Write-Host "      [Console]::OutputEncoding = [Text.Encoding]::UTF8" -ForegroundColor DarkGray

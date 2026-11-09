@@ -65,7 +65,7 @@ MJ_HOMEPAGE=https://github.com/<你>/mj-cli python3 packaging/build_packages.py 
 
 - [ ] `python3 -m unittest discover -s tests` 全绿
 - [ ] `python3 packaging/build_packages.py --verify` 两个包都通过自检
-- [ ] `bash packaging/smoke-test.sh` 在虚拟机里全绿（含大小写声音规则）
+- [ ] `bash packaging/smoke-test.sh` 在真实 Linux 上全绿（含大小写声音规则）
 - [ ] `mj/__init__.py` 的版本号 == `CHANGELOG.md` 最新一节 == tag
 - [ ] README 里的 `<repo>` 占位和 `packaging/build_packages.py` 的 `URL` 已换成你的仓库
 - [ ] `assets/` 是最后一次改渲染逻辑之后重建的（否则包里的帧是旧的）

@@ -1,4 +1,4 @@
-﻿# 从当前用户的 PATH 里移除 mj-cli\bin（不删仓库文件）。
+﻿# 从当前用户的 PATH 里移除 mj-cli\bin，并删掉 profile 里的 mj 函数块。
 #
 #   powershell -ExecutionPolicy Bypass -File uninstall.ps1
 
@@ -16,6 +16,26 @@ if ($kept.Count -eq $parts.Count) {
 } else {
     [Environment]::SetEnvironmentVariable('Path', ($kept -join ';'), 'User')
     Write-Host "已从用户 PATH 移除 $bin"
+}
+
+$markBegin = '# >>> mj-cli >>>'
+$markEnd = '# <<< mj-cli <<<'
+$profilePath = $PROFILE.CurrentUserAllHosts
+if (-not $profilePath) { $profilePath = $PROFILE }
+
+if (Test-Path $profilePath) {
+    $lines = Get-Content -Path $profilePath -Encoding UTF8
+    if ($lines -contains $markBegin) {
+        $out = @()
+        $inBlock = $false
+        foreach ($line in $lines) {
+            if ($line -eq $markBegin) { $inBlock = $true; continue }
+            if ($line -eq $markEnd) { $inBlock = $false; continue }
+            if (-not $inBlock) { $out += $line }
+        }
+        Set-Content -Path $profilePath -Value $out -Encoding UTF8
+        Write-Host "已从 $profilePath 移除 mj 函数块"
+    }
 }
 
 Write-Host ""

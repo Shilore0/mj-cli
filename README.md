@@ -50,34 +50,32 @@ git clone https://github.com/Shilore0/mj-cli.git && cd mj-cli
 要求：Linux + Python ≥ 3.8 + 一个支持 24 位真彩色的终端。
 不装也能用：`python3 bin/mj` 或 `python3 -m mj`。
 
-## 在 Windows / PowerShell 里跑
+## Windows
 
-虚拟机上没声音，通常是没装音频驱动（没有 `/dev/snd`）；想听声音就在 Windows 侧跑：
+Windows 原生支持，`cmd` 和 PowerShell 都能用，不需要装任何音频工具。
 
 ```powershell
 cd C:\path\to\mj-cli
 powershell -ExecutionPolicy Bypass -File .\install.ps1   # 把 bin 加进用户 PATH
 ```
 
-然后：
+装完新开一个窗口：
 
 ```powershell
 mj            # 静音（小写）
 MJ            # 带音乐（大写）
-mj --audio    # 大写没生效时用这个，一定能出声
+mj --audio    # 显式出声
 ```
 
-细节：
-
-- **声音**用 Windows 自带的 `winsound` 异步播放，不需要装 ffplay / paplay 之类。
-- **颜色**：程序会给传统 conhost 临时打开 VT 转义（否则会看到 `←[38;2;...` 这种原始序列），
-  用 Windows Terminal 更省事。
-- **大小写**：Windows 命令不区分大小写，所以 `bin\mj.cmd` 会读 `%~0` 判断你敲的是 `mj` 还是 `MJ`；
-  万一被规范化了，`mj --audio` 效果一样。
+- **声音**用系统自带的 `winsound` 异步播放 WAV，`--explain` 里会显示 `player : winsound`。
+- **大小写**：Windows 命令本身不区分大小写，所以 `bin\mj.cmd` 从 `%~0` 取你实际敲的名字，
+  再通过 `MJ_AS` 环境变量传给程序；PowerShell 里则由 `install.ps1` 写进 profile 的 `mj` 函数
+  用 `$MyInvocation.InvocationName` 做同样的事。所以 `MJ` 在两边都能自动带音乐。
+- **颜色**：传统 conhost 默认不开 ANSI 转义，程序会自动打开并在退出时还原；Windows Terminal 无需处理。
 - **`--window` 不可用**：那是 Linux 的 GTK 悬浮窗，Windows 上会提示一句后走终端模式。
-- **中文乱码**：直接看没问题；但把 `mj --list` 之类接到管道（`|`）时，PowerShell 会用 GBK
-  解码 UTF-8 输出，先执行一次 `[Console]::OutputEncoding = [Text.Encoding]::UTF8` 即可。
-- 卸载：`powershell -ExecutionPolicy Bypass -File .\uninstall.ps1`（只改 PATH，不删文件）。
+- **中文乱码**：直接看没问题；把输出接到管道（`|`）时 PowerShell 会用 GBK 解码 UTF-8，
+  先执行一次 `[Console]::OutputEncoding = [Text.Encoding]::UTF8`。
+- 卸载：`powershell -ExecutionPolicy Bypass -File .\uninstall.ps1`（移除 PATH 与 profile 里的函数）。
 
 ## 打包成 deb / rpm
 
@@ -85,12 +83,12 @@ mj --audio    # 大写没生效时用这个，一定能出声
 
 | 文件 | 适用 |
 |---|---|
-| `mj-cli_1.0-1_all.deb` | Debian / Ubuntu / Mint … |
-| `mj-cli-1.0-1.noarch.rpm` | Fedora / RHEL / Rocky / Alma / openSUSE … |
+| `mj-cli_1.1-1_all.deb` | Debian / Ubuntu / Mint … |
+| `mj-cli-1.1-1.noarch.rpm` | Fedora / RHEL / Rocky / Alma / openSUSE … |
 
 ```bash
-sudo dpkg -i dist/mj-cli_1.0-1_all.deb      # Debian 系
-sudo rpm -ivh dist/mj-cli-1.0-1.noarch.rpm  # RPM 系
+sudo dpkg -i dist/mj-cli_1.1-1_all.deb      # Debian 系
+sudo rpm -ivh dist/mj-cli-1.1-1.noarch.rpm  # RPM 系
 ```
 
 装完 `/usr/bin/mj`、`/usr/bin/MJ` 都是软链，指向 `/usr/lib/mj-cli/bin/mj`；
@@ -103,7 +101,7 @@ python3 packaging/build_packages.py --verify   # 打两个 + 自检
 python3 packaging/build_packages.py --deb      # 只打 deb
 ```
 
-虚拟机里的完整安装/校验/卸载流程：`bash packaging/smoke-test.sh`，
+在真实 Linux 上跑完整的安装 / 校验 / 卸载流程：`bash packaging/smoke-test.sh`，
 详细清单见 [packaging/TESTING.md](packaging/TESTING.md)；
 发布到 GitHub（自动发版、版本号约定、自查清单）见 [RELEASING.md](RELEASING.md)。
 
@@ -149,8 +147,10 @@ $ mj --explain       # 打印抽到什么、有没有声音、用哪个素材
 | `mj`（小写） | 静音 | `mj --audio` |
 | `MJ`（大写） | 带音乐 | `MJ --no-audio` |
 
-两个名字是同一份程序的软链，程序只看**自己被叫什么名字**，不看参数。
+两个名字指向同一份程序，程序只看**自己被叫什么名字**，不看参数。
 所以你在公共终端、会上投屏的时候敲小写，自己玩的时候敲大写。
+（Windows 上命令名不区分大小写，启动器 / profile 函数会把原始大小写通过 `MJ_AS`
+传给程序，行为与 Linux 一致。）
 
 音轨跟动画是写死绑定的，不会串：
 
@@ -162,8 +162,9 @@ $ mj --explain       # 打印抽到什么、有没有声音、用哪个素材
 构建素材时会用 PCM 逐字节摘要校验「这个 wav 是不是这条源片的声音」，对不上直接报错，
 防止以后换素材悄悄错配。`mj --explain` 可以随时查看当前抽到的彩蛋用的是哪条音轨。
 
-实际出声要有播放器：`pw-play` / `paplay` / `aplay` / `ffplay` / `mpv` / `sox` 任意一个，
-都没有就静音播放（动画照常）。也可以 `MJ_AUDIO_CMD=...` 指定自己的命令。
+实际出声要有播放器：Windows 用系统自带的 `winsound`；Linux / macOS 用
+`pw-play` / `paplay` / `aplay` / `ffplay` / `mpv` / `sox` 任意一个，都没有就静音播放
+（动画照常）。也可以 `MJ_AUDIO_CMD=...` 指定自己的命令。
 
 ## 两种播放模式
 
@@ -241,7 +242,7 @@ mj-cli/
 ├─ scripts/build_assets.py    # 素材构建
 ├─ packaging/
 │  ├─ build_packages.py       # 手写 deb / rpm 打包器（纯 Python）
-│  ├─ smoke-test.sh           # 虚拟机里的安装→校验→卸载脚本
+│  ├─ smoke-test.sh           # 安装→校验→卸载自检脚本
 │  └─ TESTING.md              # 打包与测试说明
 ├─ dist/                      # 打好的 deb / rpm
 ├─ source/{hang,pose}/        # Side-by-Side Alpha 源片

@@ -21,7 +21,14 @@ DESCRIPTION = """\
 
 
 def invoked_name() -> str:
-    """用户实际敲的是哪个名字（mj 还是 MJ）。"""
+    """用户实际敲的是哪个名字（mj 还是 MJ）。
+
+    Windows 的 cmd / PowerShell 会把命令名规范化，`MJ` 到了 Python 这里就成了 `mj`，
+    所以启动器会用 MJ_AS 环境变量把原始名字带过来。
+    """
+    override = os.environ.get("MJ_AS")
+    if override:
+        return override
     return os.path.basename(sys.argv[0] or "")
 
 

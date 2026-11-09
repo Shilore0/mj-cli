@@ -107,6 +107,11 @@ def render_rows(data: bytes, plan: list[list[int]], width: int,
             parts.append(char)
 
         if blanks:
+            # 行尾的空白格也必须先复位，否则会继承上一个像素的背景色，
+            # 在画面上表现为一条横贯到行尾的色带（浅色像素 -> 白色横线）。
+            if cur_fg is not None or cur_bg is not None:
+                parts.append(RESET)
+                cur_fg = cur_bg = None
             parts.append(BLANK * blanks)
         parts.append(RESET)
         lines.append("".join(parts))

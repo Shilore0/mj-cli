@@ -1,11 +1,11 @@
-# 在虚拟机里测这两个包
+# 测这两个包
 
 产物在 `dist/`：
 
 | 文件 | 大小 | 适用 |
 |---|---:|---|
-| `mj-cli_1.0-1_all.deb` | 7.2 MB | Debian / Ubuntu / Mint / Kali … |
-| `mj-cli-1.0-1.noarch.rpm` | 7.2 MB | Fedora / RHEL / Rocky / Alma / openSUSE … |
+| `mj-cli_1.1-1_all.deb` | 7.2 MB | Debian / Ubuntu / Mint / Kali … |
+| `mj-cli-1.1-1.noarch.rpm` | 7.2 MB | Fedora / RHEL / Rocky / Alma / openSUSE … |
 
 两个包内容一致，`Architecture: all` / `BuildArch: noarch`（纯 Python）。
 装完后的布局：
@@ -20,7 +20,7 @@
 
 ## 一行命令
 
-把整个 `mj-cli` 目录（或至少 `dist/` + `packaging/smoke-test.sh`）拷进虚拟机，然后：
+把整个 `mj-cli` 目录（或至少 `dist/` + `packaging/smoke-test.sh`）放到 Linux 机器上，然后：
 
 ```bash
 bash packaging/smoke-test.sh          # 装 → 检查 → 播放 → 卸载，全自动
@@ -34,7 +34,7 @@ bash packaging/smoke-test.sh --no-uninstall   # 想留着重看效果
 ### Debian / Ubuntu
 
 ```bash
-sudo dpkg -i mj-cli_1.0-1_all.deb
+sudo dpkg -i mj-cli_1.1-1_all.deb
 dpkg -L mj-cli | head                 # 看文件清单
 mj --version && mj --list
 mj                                    # 真看一眼
@@ -50,7 +50,7 @@ sudo apt-get -f install -y
 ### Fedora / RHEL / openSUSE
 
 ```bash
-sudo rpm -ivh mj-cli-1.0-1.noarch.rpm
+sudo rpm -ivh mj-cli-1.1-1.noarch.rpm
 rpm -qi mj-cli                        # 元信息
 rpm -ql mj-cli | head                 # 文件清单
 rpm -V mj-cli                         # 逐个文件校验摘要/权限，无输出=全部一致
@@ -63,7 +63,7 @@ sudo rpm -e mj-cli                    # 卸载
 - `mj --list` 输出两行：`hang 倒挂 … 18x23/26x33/36x45/50x63/68x86`、`pose 耍帅 …`。
 - `mj` 在终端里画出一只透明蜘蛛侠（3 秒），结束后**屏幕恢复原样**，光标回来。
 - 多敲几次 `mj`，「倒挂」「耍帅」随机出现，允许连续两次一样（这是设计，不是 bug）。
-- **小写 `mj` 没声音、大写 `MJ` 有声音**——这是 1.0 的设计，不是 bug。
+- **小写 `mj` 没声音、大写 `MJ` 有声音**——这是设计，不是 bug。
   反过来用 `mj --audio` / `MJ --no-audio`。`mj --explain` 会直接告诉你这次的判定结果。
 - `mj --no-audio | cat` 只打印一行名字，不会往管道里灌转义序列。
 

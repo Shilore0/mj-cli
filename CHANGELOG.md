@@ -2,18 +2,22 @@
 
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循语义化版本。
 
-## [Unreleased]
+## [1.1] - 2026-11-09
 
 ### 新增
 
-- Windows / PowerShell 支持：`bin/mj.cmd` 启动器，`install.ps1` / `uninstall.ps1`（改用户 PATH）。
+- Windows 支持：`bin/mj.cmd` 启动器，`install.ps1` / `uninstall.ps1`（改用户 PATH，
+  不碰系统设置）。`cmd` 与 PowerShell 都能直接敲 `mj` / `MJ`。
 - 音效新增 `winsound` 后端：Windows 自带，不需要外部播放器。
 - 传统 conhost 自动打开 VT 转义（`mj/win_console.py`），否则会显示原始 ANSI 序列。
+- 新增 `MJ_AS` 环境变量：启动器用它把「你实际敲的名字」传给程序，
+  因为 Windows 会规范化命令名的大小写。
 
 ### 修复
 
-- Windows 上命令名不区分大小写，启动器改用 `%~0` 读取你实际敲的大小写，
-  `MJ` 仍能自动带音乐；被规范化时可用 `--audio` 显式出声。
+- **画面上出现白色横线**：渲染行尾的透明格子前没有复位颜色，导致该行最后一个像素的
+  背景色一路刷到行尾，形成横贯画面的浅色条带。现在行尾空白前也会发 `SGR 0`。
+  （所有帧包已重建，见到白线的版本请升级。）
 
 ## [1.0] - 2026-11-09
 
@@ -31,7 +35,7 @@
 - 音轨与动画一对一绑定，构建期用 PCM 摘要校验，防止素材错配。
 - 可选 `--window`：GTK3 + cairo 的逐像素透明桌面悬浮窗，失败自动退回终端。
 - 打包：纯 Python 手写的 deb / rpm 打包器（不依赖 dpkg-deb / rpmbuild），
-  附打包自检与虚拟机安装自检脚本。
+  附打包自检与安装自检脚本。
 - 素材构建脚本：从 Side-by-Side Alpha 源片重建透明 webm、wav 与 ANSI 帧包。
 
 ### 说明

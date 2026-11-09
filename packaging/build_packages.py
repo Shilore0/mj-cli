@@ -180,6 +180,13 @@ mj \\- 命令行版「透明蜘蛛侠」彩蛋
 .TP
 .B MJ_AUDIO_CMD
 指定播放音效的命令。
+.TP
+.B MJ_AS
+启动器用它传递「实际敲的是 mj 还是 MJ」——Windows 的命令名不区分大小写，
+需要这样把原始大小写带进来。
+.PP
+Windows 下用系统自带的 winsound 播放音效；Linux / macOS 下挑 PATH 里的
+pw-play、paplay、aplay、ffplay、mpv 或 sox。
 .SH FILES
 .TP
 .I /usr/lib/mj-cli/
