@@ -1,0 +1,13 @@
+* text=auto eol=lf
+
+*.png binary
+*.webm binary
+*.wav binary
+*.bin binary
+*.deb binary
+*.rpm binary
+*.gz binary
+*.xz binary
+
+bin/mj text eol=lf
+*.sh text eol=lf

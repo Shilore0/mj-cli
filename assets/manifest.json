@@ -1,0 +1,161 @@
+{
+  "cacheWidth": 112,
+  "effects": [
+    {
+      "id": "hang",
+      "label": "倒挂",
+      "fps": 30,
+      "duration": 3.05,
+      "width": 638,
+      "height": 1612,
+      "webm": "spiderman-hang.webm",
+      "wav": "hang.wav",
+      "frames": "terminal/hang.bin",
+      "audio": true,
+      "cache": {
+        "count": 91,
+        "themes": {
+          "dark": {
+            "file": "terminal/hang.bin",
+            "buckets": [
+              {
+                "width": 18,
+                "height": 46,
+                "rows": 23
+              },
+              {
+                "width": 26,
+                "height": 66,
+                "rows": 33
+              },
+              {
+                "width": 36,
+                "height": 90,
+                "rows": 45
+              },
+              {
+                "width": 50,
+                "height": 126,
+                "rows": 63
+              },
+              {
+                "width": 68,
+                "height": 172,
+                "rows": 86
+              }
+            ]
+          },
+          "light": {
+            "file": "terminal/hang.light.bin",
+            "buckets": [
+              {
+                "width": 18,
+                "height": 46,
+                "rows": 23
+              },
+              {
+                "width": 26,
+                "height": 66,
+                "rows": 33
+              },
+              {
+                "width": 36,
+                "height": 90,
+                "rows": 45
+              },
+              {
+                "width": 50,
+                "height": 126,
+                "rows": 63
+              },
+              {
+                "width": 68,
+                "height": 172,
+                "rows": 86
+              }
+            ]
+          }
+        },
+        "bytes": 3222925
+      }
+    },
+    {
+      "id": "pose",
+      "label": "耍帅",
+      "fps": 30,
+      "duration": 3.01,
+      "width": 1080,
+      "height": 1594,
+      "webm": "spiderman-pose.webm",
+      "wav": "pose.wav",
+      "frames": "terminal/pose.bin",
+      "audio": true,
+      "cache": {
+        "count": 90,
+        "themes": {
+          "dark": {
+            "file": "terminal/pose.bin",
+            "buckets": [
+              {
+                "width": 18,
+                "height": 26,
+                "rows": 13
+              },
+              {
+                "width": 26,
+                "height": 38,
+                "rows": 19
+              },
+              {
+                "width": 36,
+                "height": 54,
+                "rows": 27
+              },
+              {
+                "width": 50,
+                "height": 74,
+                "rows": 37
+              },
+              {
+                "width": 68,
+                "height": 100,
+                "rows": 50
+              }
+            ]
+          },
+          "light": {
+            "file": "terminal/pose.light.bin",
+            "buckets": [
+              {
+                "width": 18,
+                "height": 26,
+                "rows": 13
+              },
+              {
+                "width": 26,
+                "height": 38,
+                "rows": 19
+              },
+              {
+                "width": 36,
+                "height": 54,
+                "rows": 27
+              },
+              {
+                "width": 50,
+                "height": 74,
+                "rows": 37
+              },
+              {
+                "width": 68,
+                "height": 100,
+                "rows": 50
+              }
+            ]
+          }
+        },
+        "bytes": 1529394
+      }
+    }
+  ]
+}

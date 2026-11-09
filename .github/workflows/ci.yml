@@ -1,0 +1,58 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+    tags-ignore: ["v*"]
+  pull_request:
+
+jobs:
+  test:
+    name: 测试 + 打包
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: 语法检查
+        run: python -m compileall -q mj bin packaging scripts tests
+
+      - name: 单元测试
+        run: python -m unittest discover -s tests -v
+
+      - name: 打包并自检（只在最新 Python 上跑，产物上传）
+        if: matrix.python-version == '3.13'
+        env:
+          MJ_HOMEPAGE: ${{ github.server_url }}/${{ github.repository }}
+        run: python packaging/build_packages.py --verify
+
+      - name: 上传 deb / rpm
+        if: matrix.python-version == '3.13'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mj-cli-packages
+          path: dist/*
+          if-no-files-found: error
+
+  deb-install:
+    name: 真实安装（Ubuntu）
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: 打 deb
+        env:
+          MJ_HOMEPAGE: ${{ github.server_url }}/${{ github.repository }}
+        run: python packaging/build_packages.py --deb
+      - name: 安装 → 校验 → 卸载
+        run: bash packaging/smoke-test.sh

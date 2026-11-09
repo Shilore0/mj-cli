@@ -1,0 +1,17 @@
+#!/usr/bin/env python3
+"""mj 启动器：不管从哪里调用（含 MJ 软链），都把项目根目录放进 sys.path。
+
+注意别用 realpath 去改 sys.argv[0]——大小写要靠它区分（mj 静音 / MJ 有声音）。
+"""
+
+import os
+import sys
+
+ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+
+from mj.cli import main  # noqa: E402
+
+if __name__ == "__main__":
+    sys.exit(main())

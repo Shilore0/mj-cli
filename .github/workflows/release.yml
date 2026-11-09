@@ -1,0 +1,41 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: 打 tag 即发版
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 测试
+        run: python -m unittest discover -s tests -v
+
+      - name: 打包
+        env:
+          MJ_HOMEPAGE: ${{ github.server_url }}/${{ github.repository }}
+        run: python packaging/build_packages.py --verify
+
+      - name: 校验 tag 与代码里的版本一致
+        run: |
+          version=$(python -c "import sys; sys.path.insert(0,'.'); import mj; print(mj.__version__)")
+          tag="${GITHUB_REF_NAME#v}"
+          echo "tag=$tag version=$version"
+          test "$tag" = "$version" || { echo "::error::tag $GITHUB_REF_NAME 与 mj/__init__.py 的 $version 不一致"; exit 1; }
+
+      - name: 创建 Release 并上传包
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+          fail_on_unmatched_files: true

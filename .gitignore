@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# 构建产物：deb / rpm 走 GitHub Releases，不进仓库
+dist/
+build/
+*.egg-info/
+
+# 临时目录
+_tmp/
+_pkgcheck/
+_install_test/
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+*.log
