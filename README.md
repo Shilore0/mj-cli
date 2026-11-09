@@ -94,8 +94,8 @@ Windows 上的几点差别：
 从 [Releases](https://github.com/Shilore0/mj-cli/releases) 下载，或用仓库里 `dist/` 的包：
 
 ```bash
-sudo dpkg -i mj-cli_1.3-1_all.deb      # Debian / Ubuntu / Mint
-sudo rpm -ivh mj-cli-1.3-1.noarch.rpm  # Fedora / RHEL / Rocky / openSUSE
+sudo dpkg -i mj-cli_1.4-1_all.deb      # Debian / Ubuntu / Mint
+sudo rpm -ivh mj-cli-1.4-1.noarch.rpm  # Fedora / RHEL / Rocky / openSUSE
 ```
 
 装完 `/usr/bin/mj`、`/usr/bin/MJ` 都指向 `/usr/lib/mj-cli/bin/mj`，
@@ -124,8 +124,8 @@ PATH 与 profile 都不用重装；只有把目录挪了位置才需要重跑 `i
 **deb / rpm**
 
 ```bash
-sudo dpkg -i mj-cli_1.3-1_all.deb          # 直接装新包就是升级
-sudo rpm -Uvh mj-cli-1.3-1.noarch.rpm
+sudo dpkg -i mj-cli_1.4-1_all.deb          # 直接装新包就是升级
+sudo rpm -Uvh mj-cli-1.4-1.noarch.rpm
 ```
 
 > 涉及画面或素材的更新（例如 1.1 修掉的白线）必须连 `assets/` 一起换：
@@ -335,8 +335,8 @@ mj-cli/
 
 | 文件 | 适用 |
 |---|---|
-| `mj-cli_1.3-1_all.deb` | Debian / Ubuntu / Mint / Kali … |
-| `mj-cli-1.3-1.noarch.rpm` | Fedora / RHEL / Rocky / Alma / openSUSE … |
+| `mj-cli_1.4-1_all.deb` | Debian / Ubuntu / Mint / Kali … |
+| `mj-cli-1.4-1.noarch.rpm` | Fedora / RHEL / Rocky / Alma / openSUSE … |
 
 打包器是手写的（`ar` + `tar` + `cpio` + RPM header），不需要 `dpkg-deb`、
 `rpmbuild`、`fpm`，Windows 上也能出包：

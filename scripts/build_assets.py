@@ -50,7 +50,7 @@ TERMINAL_DIR = ASSETS / "terminal"
 
 MASK_THRESHOLD = 2  # 遮罩亮度低于该值视为完全透明
 PADDING = 24        # Alpha 联合包围盒外扩的安全边距
-CACHE_WIDTH = 112   # 解码用的工作分辨率（之后按桶缩放到字符网格）
+CACHE_WIDTH = 320   # 解码用的工作分辨率；太高占内存，太低会把 1~2 像素的蛛丝平均掉
 BUCKETS = [18, 26, 36, 50, 68]   # 预渲染的精灵宽度（字符列数）
 THEMES = ["dark", "light"]       # 预渲染的背景主题
 

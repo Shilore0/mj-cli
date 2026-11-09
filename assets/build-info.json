@@ -1,7 +1,7 @@
 {
   "maskThreshold": 2,
   "padding": 24,
-  "cacheWidth": 112,
+  "cacheWidth": 320,
   "fps": 30,
   "effects": [
     {

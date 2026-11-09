@@ -17,15 +17,94 @@ RESET = "\x1b[0m"
 
 def sampler(pack_w: int, pack_h: int, width: int, height: int) -> list[list[int]]:
     """预计算每个目标像素对应的源字节偏移，避免逐帧做除法。"""
-    colmap = [min(pack_w - 1, x * pack_w // width) * 4 for x in range(width)]
-    rows: list[list[int]] = []
+def sampler(pack_w: int, pack_h: int, width: int, height: int) -> list[list[tuple[int, ...]]]:
+    """每个目标像素对应一组源像素偏移（盒式采样，而不是最近邻）。
+
+    最近邻会把细线整条丢掉——倒挂的蛛丝只有 1~2 像素宽，缩到 26 列就彻底消失。
+    这里把每个目标像素覆盖的源像素都记下来，渲染时再做合并。
+    """
+    cols: list[tuple[int, int]] = []
+    for x in range(width):
+        x0 = min(pack_w - 1, x * pack_w // width)
+        x1 = min(pack_w, max(x0 + 1, (x + 1) * pack_w // width))
+        cols.append((x0 * 4, x1 * 4, 4))
+
+    rows: list[list[tuple[int, ...]]] = []
     for py in range(height):
-        base = min(pack_h - 1, py * pack_h // height) * pack_w * 4
-        rows.append([base + c for c in colmap])
+        y0 = min(pack_h - 1, py * pack_h // height)
+        y1 = min(pack_h, max(y0 + 1, (py + 1) * pack_h // height))
+        row: list[tuple[int, ...]] = []
+        for start, stop, step in cols:
+            offsets = []
+            for sy in range(y0, y1):
+                base = sy * pack_w * 4
+                offsets.extend(range(base + start, base + stop, step))
+            row.append(tuple(offsets))
+        rows.append(row)
     return rows
 
 
-def render_rows(data: bytes, plan: list[list[int]], width: int,
+def merge(data: bytes, offsets: tuple[int, ...]) -> tuple[int, int, int, int]:
+    """把一盒源像素合成一个 (r, g, b, a)。
+
+    普通区域按 alpha 加权平均（边缘更柔）；当盒里存在明显更亮的细线时直接取那颗，
+    否则细线会被平均成近乎透明。alpha 用面积平均，保证覆盖度正确。
+    """
+    best = -1
+    best_alpha = 0
+    total_alpha = 0
+    sum_r = sum_g = sum_b = 0
+
+    for o in offsets:
+        a = data[o + 3]
+        if a:
+            total_alpha += a
+            sum_r += data[o] * a
+            sum_g += data[o + 1] * a
+            sum_b += data[o + 2] * a
+            if a > best_alpha:
+                best_alpha = a
+                best = o
+
+    if not best_alpha:
+        return (0, 0, 0, 0)
+
+    coverage = total_alpha // len(offsets)
+    if best_alpha >= 64 and best_alpha > 3 * coverage // 2:
+        # 细线（蛛丝、描边）：只占盒子里一小块，按面积平均会被稀释成灰色。
+        # 这里保留最亮那颗的颜色，并把 alpha 提亮，让它在小档位上也看得见。
+        return (data[best], data[best + 1], data[best + 2],
+                min(255, best_alpha * 2))
+
+    avg = (sum_r // total_alpha, sum_g // total_alpha, sum_b // total_alpha)
+
+    # 中性灰白的亮部（蛛丝、高光）：盒子里还有黑描边/背景时，平均会把白线拉成灰线。
+    # 只对低饱和度生效，人物身上的红/蓝不受影响。
+    if max(avg) - min(avg) < 24 and coverage > 96:
+        for o in offsets:
+            a = data[o + 3]
+            if a >= 128 and max(data[o], data[o + 1], data[o + 2]) - min(
+                    data[o], data[o + 1], data[o + 2]) < 24:
+                if max(data[o], data[o + 1], data[o + 2]) >= max(avg) + 40:
+                    return (data[o], data[o + 1], data[o + 2], coverage)
+
+    return (avg[0], avg[1], avg[2], coverage)
+
+
+def _blend(r: int, g: int, b: int, a: int, base: int) -> tuple[int, int, int] | None:
+    """把半透明像素混到主题底色上（深色主题混向黑，浅色混向白）。"""
+    if not a:
+        return None
+    if a >= 255:
+        return (r, g, b)
+    return (
+        (r * a + base * (255 - a)) // 255,
+        (g * a + base * (255 - a)) // 255,
+        (b * a + base * (255 - a)) // 255,
+    )
+
+
+def render_rows(data: bytes, plan: list[list[tuple[int, ...]]], width: int,
                 theme: str = "dark") -> list[str]:
     """按采样表把一帧渲染成 ANSI 行字符串列表（每行恰好 width 格）。"""
     base = 255 if theme == "light" else 0
@@ -41,10 +120,8 @@ def render_rows(data: bytes, plan: list[list[int]], width: int,
         blanks = 0
 
         for i in range(width):
-            ot = top[i]
-            ob = bot[i]
-            ta = data[ot + 3]
-            ba = data[ob + 3]
+            tr, tg, tb, ta = merge(data, top[i])
+            br, bgc, bb, ba = merge(data, bot[i])
 
             if not ta and not ba:
                 blanks += 1
@@ -57,40 +134,14 @@ def render_rows(data: bytes, plan: list[list[int]], width: int,
                 parts.append(BLANK * blanks)
                 blanks = 0
 
-            if ta == 255:
-                fg = (data[ot], data[ot + 1], data[ot + 2])
-            elif ta:
-                fg = (
-                    (data[ot] * ta + base * (255 - ta)) // 255,
-                    (data[ot + 1] * ta + base * (255 - ta)) // 255,
-                    (data[ot + 2] * ta + base * (255 - ta)) // 255,
-                )
-            else:
-                fg = None
-
             if ta:
                 char = UPPER
-                if ba == 255:
-                    bg = (data[ob], data[ob + 1], data[ob + 2])
-                elif ba:
-                    bg = (
-                        (data[ob] * ba + base * (255 - ba)) // 255,
-                        (data[ob + 1] * ba + base * (255 - ba)) // 255,
-                        (data[ob + 2] * ba + base * (255 - ba)) // 255,
-                    )
-                else:
-                    bg = None
+                fg = _blend(tr, tg, tb, ta, base)
+                bg = _blend(br, bgc, bb, ba, base) if ba else None
             else:
                 # 上像素透明、下像素有内容：改成下半块，只设前景色
                 char = LOWER
-                if ba == 255:
-                    fg = (data[ob], data[ob + 1], data[ob + 2])
-                else:
-                    fg = (
-                        (data[ob] * ba + base * (255 - ba)) // 255,
-                        (data[ob + 1] * ba + base * (255 - ba)) // 255,
-                        (data[ob + 2] * ba + base * (255 - ba)) // 255,
-                    )
+                fg = _blend(br, bgc, bb, ba, base)
                 bg = None
 
             if fg != cur_fg or bg != cur_bg:
