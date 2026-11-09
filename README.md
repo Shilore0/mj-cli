@@ -39,7 +39,7 @@ $ mj
 **方式二：从源码装**（改代码即时生效）
 
 ```bash
-git clone <repo> && cd mj-cli
+git clone https://github.com/Shilore0/mj-cli.git && cd mj-cli
 ./install.sh
 ```
 

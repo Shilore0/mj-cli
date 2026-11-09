@@ -1,16 +1,16 @@
 # 发布到 GitHub
 
-## 0. 先把「这是谁的仓库」改掉
+## 0. 仓库地址
 
-打包元信息里现在挂的是素材来源的上游仓库，不是你的。发布前改一处：
+包元信息里的 Homepage 和 README 里的克隆地址都已经指向
+`https://github.com/Shilore0/mj-cli`。以后换仓库只需要：
 
 ```bash
 # 临时覆盖（不改代码）
-MJ_HOMEPAGE=https://github.com/<你>/mj-cli python3 packaging/build_packages.py --verify
+MJ_HOMEPAGE=https://github.com/<新地址> python3 packaging/build_packages.py --verify
 ```
 
-或者把 `packaging/build_packages.py` 里 `URL` 的默认值改成你的仓库地址，一劳永逸。
-README 里的 `<repo>` 占位符也一并替换。
+或直接改 `packaging/build_packages.py` 里 `URL` 的默认值。
 
 ## 1. 建仓库并推上去
 

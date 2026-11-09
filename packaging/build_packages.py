@@ -42,9 +42,8 @@ MAINTAINER = "mj-cli maintainers <noreply@example.invalid>"
 SECTION = "games"
 LICENSE = "Apache-2.0"
 GROUP = "Applications/System"
-# 发布到自己的仓库后，用 MJ_HOMEPAGE 环境变量覆盖（或直接改这里的默认值）。
-# 默认指向素材来源的上游仓库，而不是本项目。
-URL = os.environ.get("MJ_HOMEPAGE", "https://github.com/MI-KUNs/CN-TikTok-MJ")
+# 包的 Homepage 字段。换仓库时改这里，或用 MJ_HOMEPAGE 环境变量覆盖。
+URL = os.environ.get("MJ_HOMEPAGE", "https://github.com/Shilore0/mj-cli")
 DESCRIPTION = """\
 敲 mj（或 MJ）回车，终端里会掉下来一只透明的 Q 版蜘蛛侠：各 50% 的独立概率
 播放「倒挂」或「耍帅」。用真彩色半块字符渲染，透明像素留空，让终端背景透出来。
