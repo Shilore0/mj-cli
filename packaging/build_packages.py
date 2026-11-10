@@ -347,6 +347,7 @@ def build_deb(entries: list[Entry], ver: str, release: int) -> Path:
 
 RPM_INT32, RPM_INT16, RPM_STRING, RPM_BIN, RPM_STRING_ARRAY, RPM_I18N = 4, 3, 6, 7, 8, 9
 
+TAG_HEADERI18NTABLE = 100
 TAG_NAME, TAG_VERSION, TAG_RELEASE = 1000, 1001, 1002
 TAG_SUMMARY, TAG_DESCRIPTION, TAG_BUILDTIME, TAG_BUILDHOST = 1004, 1005, 1006, 1007
 TAG_SIZE, TAG_LICENSE, TAG_PACKAGER, TAG_GROUP, TAG_URL = 1009, 1014, 1015, 1016, 1020
@@ -382,8 +383,14 @@ def _pack_values(typ: int, values) -> tuple[bytes, int]:
     raise ValueError(f"未知类型 {typ}")
 
 
-def rpm_header(items: list[tuple[int, int, object]]) -> bytes:
-    """items: (tag, type, value)，会按 tag 升序写入并做对齐。"""
+def rpm_header(items: list[tuple[int, int, object]], region_tag: int | None = None) -> bytes:
+    """items: (tag, type, value)，会按 tag 升序写入并做对齐。
+
+    region_tag 是 rpm 的「区域标签」：签名头用 62（HEADERSIGNATURES），
+    主头用 63（HEADERIMMUTABLE）。数据区末尾要多写 16 字节 trailer
+    （`{tag, BIN, -(16*il), 16}`），索引第 0 项指回它。少了这一层，rpm 会按
+    老式自由格式解析，然后报 "invalid signature tag ... (1046)" 这类错误。
+    """
     index = []
     store = bytearray()
     for tag, typ, values in sorted(items, key=lambda item: item[0]):
@@ -394,6 +401,15 @@ def rpm_header(items: list[tuple[int, int, object]]) -> bytes:
         payload, count = _pack_values(typ, values)
         store += payload
         index.append((tag, typ, offset, count))
+
+    if region_tag is not None:
+        while len(store) % 4:
+            store += b"\0"
+        trailer_offset = len(store)
+        entry_count = len(index) + 1
+        # trailer: tag, type=BIN, offset=-(16*entry_count), count=16
+        store += struct.pack(">IiiI", region_tag, 7, -(16 * entry_count), 16)
+        index.insert(0, (region_tag, 7, trailer_offset, 16))
 
     head = bytearray(b"\x8e\xad\xe8\x01" + b"\0" * 4)
     head += struct.pack(">II", len(index), len(store))
@@ -469,6 +485,7 @@ def build_rpm(entries: list[Entry], ver: str, release: int) -> Path:
         basenames.append(base)
 
     main_items: list[tuple[int, int, object]] = [
+        (TAG_HEADERI18NTABLE, RPM_STRING, "C"),
         (TAG_NAME, RPM_STRING, PKG_NAME),
         (TAG_VERSION, RPM_STRING, ver),
         (TAG_RELEASE, RPM_STRING, str(release)),
@@ -498,7 +515,6 @@ def build_rpm(entries: list[Entry], ver: str, release: int) -> Path:
         (TAG_FILEUSERNAME, RPM_STRING_ARRAY, ["root"] * len(file_meta)),
         (TAG_FILEGROUPNAME, RPM_STRING_ARRAY, ["root"] * len(file_meta)),
         (TAG_FILEVERIFYFLAGS, RPM_INT32, [0xFFFF_FFFF] * len(file_meta)),
-        (TAG_ARCHIVESIZE, RPM_INT32, [sum(e.size for e in files)]),
         (TAG_PROVIDENAME, RPM_STRING_ARRAY, [PKG_NAME]),
         (TAG_PROVIDEFLAGS, RPM_INT32, [RPMSENSE_EQUAL]),
         (TAG_PROVIDEVERSION, RPM_STRING_ARRAY, [f"{ver}-{release}"]),
@@ -510,13 +526,13 @@ def build_rpm(entries: list[Entry], ver: str, release: int) -> Path:
         (TAG_PAYLOADFORMAT, RPM_STRING, "cpio"),
         (TAG_PAYLOADCOMPRESSOR, RPM_STRING, "xz"),
         (TAG_PAYLOADFLAGS, RPM_STRING, "2"),
-        (TAG_FILEDIGESTALGO, RPM_INT32, [DIGEST_MD5]),
+        (TAG_FILEDIGESTALGO, RPM_INT32, [DIGEST_MD5] * len(file_meta)),
         (TAG_PAYLOADDIGEST, RPM_STRING_ARRAY, [hashlib.sha256(payload).hexdigest()]),
         (TAG_PAYLOADDIGESTALGO, RPM_INT32, [DIGEST_SHA256]),
     ]
     if URL:
         main_items.append((TAG_URL, RPM_STRING, URL))
-    header = rpm_header(main_items)
+    header = rpm_header(main_items, region_tag=63)      # HEADERIMMUTABLE
     body = header + payload
 
     signature = rpm_header([
@@ -525,7 +541,7 @@ def build_rpm(entries: list[Entry], ver: str, release: int) -> Path:
         (269, RPM_STRING, hashlib.sha1(body).hexdigest()),
         (273, RPM_STRING, hashlib.sha256(body).hexdigest()),
         (1007, RPM_INT32, [len(payload)]),               # RPMSIGTAG_PAYLOADSIZE
-    ])
+    ], region_tag=62)                                        # HEADERSIGNATURES
     while (len(signature) + 96) % 8:
         signature += b"\0"
 
@@ -580,12 +596,22 @@ def verify_rpm(path: Path, entries: list[Entry]) -> None:
     assert raw[:4] == b"\xed\xab\xee\xdb", "lead magic 不对"
     assert len(raw) > 96, "文件太短"
 
-    def read_header(offset: int) -> tuple[dict[int, tuple[int, object]], int]:
+    def read_header(offset: int, region_tag: int) -> tuple[dict[int, tuple[int, object]], int]:
         assert raw[offset:offset + 4] == b"\x8e\xad\xe8\x01", "头部 magic 不对"
         count, size = struct.unpack(">II", raw[offset + 8:offset + 16])
-        entries: dict[int, tuple[int, object]] = {}
         store = offset + 16 + 16 * count
-        for i in range(count):
+
+        # 索引第 0 项必须是 region 标签（签名头 62 / 主头 63），指向数据区末尾的 trailer
+        tag0, type0, off0, cnt0 = struct.unpack(">IIII", raw[offset + 16:offset + 32])
+        assert (tag0, type0, cnt0) == (region_tag, 7, 16), \
+            f"缺 region 标签：拿到 tag={tag0} type={type0} count={cnt0}"
+        assert off0 == size - 16, f"region 偏移不对：{off0} != {size - 16}"
+        t_tag, t_type, t_off, t_cnt = struct.unpack(">IiiI", raw[store + size - 16:store + size])
+        assert (t_tag, t_type, t_cnt) == (region_tag, 7, 16), "trailer 内容不对"
+        assert t_off == -(16 * count), f"trailer 偏移不对：{t_off} != {-16 * count}"
+
+        entries: dict[int, tuple[int, object]] = {}
+        for i in range(1, count):          # 第 0 项是 region 标签，跳过
             tag, typ, data_offset, n = struct.unpack(">IIII", raw[offset + 16 + 16 * i:offset + 32 + 16 * i])
             chunk = raw[store + data_offset:store + size]
             if typ == RPM_STRING:
@@ -601,10 +627,10 @@ def verify_rpm(path: Path, entries: list[Entry]) -> None:
             entries[tag] = (typ, value)
         return entries, store + size
 
-    signature, after_sig = read_header(96)
+    signature, after_sig = read_header(96, 62)
     assert signature[1004][0] == RPM_BIN, "签名头缺 MD5"
     after_sig = (after_sig + 7) & ~7          # 签名头按 8 字节对齐，主头从这里开始
-    main, payload_start = read_header(after_sig)
+    main, payload_start = read_header(after_sig, 63)
     payload = raw[payload_start:]
 
     assert main[TAG_NAME][1] == PKG_NAME

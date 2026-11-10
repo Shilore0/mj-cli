@@ -2,6 +2,18 @@
 
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循语义化版本。
 
+## [1.6] - 2026-11-10
+
+### 修复
+
+- **rpm 装不上：`error: invalid signature tag Archivesize (1046)`**。
+  手工写的 RPM 头少了 rpm 的「区域标签」（签名头 tag 62 / 主头 tag 63）和末尾 16 字节
+  的 region trailer，于是 rpm 按老式自由格式解析、越界把主头的 1046 当成签名标签。
+  现在两个头都按 rpmbuild 的布局写 region，并用真实的官方 rpm 逐字节核对过结构。
+  顺带对齐细节：去掉已废弃的 `ARCHIVESIZE`、补 `HEADERI18NTABLE`、
+  `FILEDIGESTALGO` 改为每个文件一条。
+- 新增两条单元测试锁住 region 结构，避免以后再退化。
+
 ## [1.5] - 2026-11-09
 
 ### 新增

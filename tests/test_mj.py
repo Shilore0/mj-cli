@@ -192,3 +192,45 @@ class TestRenderCells(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestRpmHeader(unittest.TestCase):
+    """rpm 头必须是标准 region 结构，否则 rpm 会报 invalid signature tag。"""
+
+    @classmethod
+    def setUpClass(cls):
+        # 目录名 packaging 会被 PyPI 的同名库盖住，按路径加载
+        import importlib.util
+        from pathlib import Path as _P
+
+        path = _P(__file__).resolve().parent.parent / "packaging" / "build_packages.py"
+        import sys
+
+        spec = importlib.util.spec_from_file_location("mj_build_packages", path)
+        cls.bp = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = cls.bp      # dataclass 需要能在 sys.modules 里找到模块
+        spec.loader.exec_module(cls.bp)
+
+    def check(self, region_tag, tag_for_payload):
+        import struct
+
+        header = self.bp.rpm_header([(tag_for_payload, self.bp.RPM_STRING, "x")], region_tag=region_tag)
+        il, dl = struct.unpack(">II", header[8:16])
+        store = 16 + 16 * il
+
+        tag0, type0, off0, count0 = struct.unpack(">IIII", header[16:32])
+        self.assertEqual((tag0, type0, count0), (region_tag, 7, 16))
+        self.assertEqual(off0, dl - 16, "region 偏移应指向数据区末尾 16 字节")
+
+        t_tag, t_type, t_off, t_count = struct.unpack(">IiiI", header[store + dl - 16:store + dl])
+        self.assertEqual((t_tag, t_type, t_count), (region_tag, 7, 16))
+        self.assertEqual(t_off, -16 * il, "trailer 里的 -(16*il) 不对")
+
+    def test_signature_region(self):
+        self.check(62, 1000)
+
+    def test_main_region(self):
+        self.check(63, 1000)
+
+
+

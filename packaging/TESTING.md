@@ -4,8 +4,8 @@
 
 | 文件 | 大小 | 适用 |
 |---|---:|---|
-| `mj-cli_1.5-1_all.deb` | 7.2 MB | Debian / Ubuntu / Mint / Kali … |
-| `mj-cli-1.5-1.noarch.rpm` | 7.2 MB | Fedora / RHEL / Rocky / Alma / openSUSE … |
+| `mj-cli_1.6-1_all.deb` | 7.2 MB | Debian / Ubuntu / Mint / Kali … |
+| `mj-cli-1.6-1.noarch.rpm` | 7.2 MB | Fedora / RHEL / Rocky / Alma / openSUSE … |
 
 两个包内容一致，`Architecture: all` / `BuildArch: noarch`（纯 Python）。
 装完后的布局：
@@ -34,7 +34,7 @@ bash packaging/smoke-test.sh --no-uninstall   # 想留着重看效果
 ### Debian / Ubuntu
 
 ```bash
-sudo dpkg -i mj-cli_1.5-1_all.deb
+sudo dpkg -i mj-cli_1.6-1_all.deb
 dpkg -L mj-cli | head                 # 看文件清单
 mj --version && mj --list
 mj                                    # 真看一眼
@@ -50,7 +50,7 @@ sudo apt-get -f install -y
 ### Fedora / RHEL / openSUSE
 
 ```bash
-sudo rpm -ivh mj-cli-1.5-1.noarch.rpm
+sudo rpm -ivh mj-cli-1.6-1.noarch.rpm
 rpm -qi mj-cli                        # 元信息
 rpm -ql mj-cli | head                 # 文件清单
 rpm -V mj-cli                         # 逐个文件校验摘要/权限，无输出=全部一致
