@@ -94,8 +94,8 @@ Windows 上的几点差别：
 从 [Releases](https://github.com/Shilore0/mj-cli/releases) 下载，或用仓库里 `dist/` 的包：
 
 ```bash
-sudo dpkg -i mj-cli_1.4-1_all.deb      # Debian / Ubuntu / Mint
-sudo rpm -ivh mj-cli-1.4-1.noarch.rpm  # Fedora / RHEL / Rocky / openSUSE
+sudo dpkg -i mj-cli_1.5-1_all.deb      # Debian / Ubuntu / Mint
+sudo rpm -ivh mj-cli-1.5-1.noarch.rpm  # Fedora / RHEL / Rocky / openSUSE
 ```
 
 装完 `/usr/bin/mj`、`/usr/bin/MJ` 都指向 `/usr/lib/mj-cli/bin/mj`，
@@ -105,31 +105,41 @@ sudo rpm -ivh mj-cli-1.4-1.noarch.rpm  # Fedora / RHEL / Rocky / openSUSE
 
 先看当前版本：`mj --version`。
 
-**源码安装（Linux）**
+**一键更新（源码安装）**
+
+仓库里带了更新脚本，拉代码 + 刷新安装一次搞定：
 
 ```bash
-cd mj-cli && git pull     # 或者把新版本解压覆盖进来
-mj --version              # 软链没变，不需要重新安装
+./update.sh              # 有更新就拉下来，再刷新软链
+./update.sh --check      # 只看有没有新版本
+./update.sh --force      # 本地改过代码也照样更新（丢弃改动）
 ```
-
-**源码安装（Windows）**
 
 ```powershell
-cd C:\path\to\mj-cli
-git pull                  # 或者覆盖文件
+powershell -ExecutionPolicy Bypass -File .\update.ps1          # Windows
+powershell -ExecutionPolicy Bypass -File .\update.ps1 -Check   # 只检查
 ```
 
-PATH 与 profile 都不用重装；只有把目录挪了位置才需要重跑 `install.ps1`。
+脚本做的事：`git fetch` → 比较版本 → `git merge --ff-only` → 重跑 `install.sh` / `install.ps1`。
+本地有未提交改动时会拒绝更新（提示你 `git stash`），确认不要了就加 `--force`。
+素材（`assets/`）一起更新时会提示。
+
+**手工更新**
+
+```bash
+cd mj-cli && git pull     # 软链没变，不需要重新安装
+mj --version
+```
 
 **deb / rpm**
 
 ```bash
-sudo dpkg -i mj-cli_1.4-1_all.deb          # 直接装新包就是升级
-sudo rpm -Uvh mj-cli-1.4-1.noarch.rpm
+sudo dpkg -i mj-cli_1.5-1_all.deb          # 直接装新包就是升级
+sudo rpm -Uvh mj-cli-1.5-1.noarch.rpm
 ```
 
-> 涉及画面或素材的更新（例如 1.1 修掉的白线）必须连 `assets/` 一起换：
-> 源码方式 `git pull` 自带，包方式是装新包。只换代码不换素材，画面还是旧的。
+> 涉及画面或素材的更新（例如 1.4 修掉的蛛丝）必须连 `assets/` 一起换：
+> 更新脚本和 `git pull` 都自带，包方式是装新包。只换代码不换素材，画面还是旧的。
 
 ## 彻底删除
 
@@ -322,8 +332,9 @@ mj-cli/
 ├─ docs/                      # README 预览图
 ├─ tests/test_mj.py           # 单元测试
 ├─ bin/mj.cmd                 # Windows 启动器（cmd / PowerShell）
-├─ install.sh / uninstall.sh  # Linux（软链）
-├─ install.ps1 / uninstall.ps1 # Windows（改用户 PATH）
+├─ install.sh / uninstall.sh   # Linux（软链）
+├─ install.ps1 / uninstall.ps1 # Windows（改用户 PATH 与 profile）
+├─ update.sh / update.ps1      # 从 GitHub 一键更新
 ├─ Makefile                   # make test / assets / package / smoke
 ├─ .github/workflows/         # CI（测试+打包+真装）与发版
 └─ README.md / RELEASING.md / CONTRIBUTING.md / CHANGELOG.md / LICENSE / THIRD_PARTY_NOTICES.md
@@ -335,8 +346,8 @@ mj-cli/
 
 | 文件 | 适用 |
 |---|---|
-| `mj-cli_1.4-1_all.deb` | Debian / Ubuntu / Mint / Kali … |
-| `mj-cli-1.4-1.noarch.rpm` | Fedora / RHEL / Rocky / Alma / openSUSE … |
+| `mj-cli_1.5-1_all.deb` | Debian / Ubuntu / Mint / Kali … |
+| `mj-cli-1.5-1.noarch.rpm` | Fedora / RHEL / Rocky / Alma / openSUSE … |
 
 打包器是手写的（`ar` + `tar` + `cpio` + RPM header），不需要 `dpkg-deb`、
 `rpmbuild`、`fpm`，Windows 上也能出包：

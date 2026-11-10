@@ -2,6 +2,15 @@
 
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循语义化版本。
 
+## [1.5] - 2026-11-09
+
+### 新增
+
+- `update.sh` / `update.ps1`：从 GitHub 一键更新。比较版本 → `git merge --ff-only` →
+  重跑安装脚本；`--check` 只看不更，`--force` 丢弃本地改动硬更新；
+  本地有未提交改动时拒绝执行，素材（`assets/`）更新时给出提示。
+- README 的「更新」章节改成一键更新为主、手工 `git pull` 为辅。
+
 ## [1.4] - 2026-11-09
 
 ### 修复
