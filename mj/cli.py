@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import os
 import random
+import re
 import shutil
 import sys
 import unicodedata
@@ -80,6 +81,35 @@ def print_where() -> None:
         print(f"{key}{pad} : {value}")
 
 
+SEND_PATTERN = re.compile(r"^(?:mj)+$", re.IGNORECASE)
+
+
+def parse_sends(words: list[str], repeat: int = 1) -> list[str | None]:
+    """把命令行里的词展开成「一次发送」的列表（None 表示随机抽）。
+
+    连发的语义跟抖音里一样——发几次就播几次：
+      mj mjmjmj   -> [None, None, None]     写了 3 个 mj，播 3 次
+      mj mj mj    -> [None, None, None]     分开写也算
+      mj hang     -> ["hang"]
+      mj mjmj --repeat 2 -> 4 次
+    """
+    sends: list[str | None] = []
+    for word in words:
+        lowered = word.lower()
+        if lowered in ("hang", "pose"):
+            sends.append(lowered)
+        elif SEND_PATTERN.match(word):
+            sends.extend([None] * (len(word) // 2))
+        else:
+            raise ValueError(word)
+
+    if not sends:
+        sends = [None]
+    if repeat > 1:
+        sends = sends * repeat
+    return sends
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="mj",
@@ -95,14 +125,19 @@ def build_parser() -> argparse.ArgumentParser:
   mj                  # 抽一次，50% 倒挂 / 50% 耍帅
   mj hang             # 强制看倒挂
   mj pose             # 强制看耍帅
+  mj mjmjmj           # 连发：写了 3 个 mj，就连续播 3 次
+  mj mj mj            # 同上，分开写也算 3 次
+  mj --repeat 3       # 也是连播 3 次
   mj --window         # 用真正透明的桌面悬浮窗播放（需 PyGObject）
   mj --size 50        # 限制精灵宽度为 50 列
   mj --pick-only      # 只抽签不播放，方便验证概率
   mj --explain        # 打印这次抽到什么、有没有声音、用哪个素材
 """,
     )
-    parser.add_argument("effect", nargs="?", choices=["hang", "pose"],
-                        help="指定彩蛋（默认随机，各 50%%）")
+    parser.add_argument("words", nargs="*", metavar="mj|hang|pose",
+                        help="连发：每个 mj 算一次（mjmjmj = 3 次）；也可写 hang / pose 指定彩蛋")
+    parser.add_argument("--repeat", "-n", type=int, default=1, metavar="N",
+                        help="把整串再重复 N 遍（默认 1）")
     parser.add_argument("--list", action="store_true", help="列出可用彩蛋后退出")
     parser.add_argument("--pick-only", action="store_true", help="只输出抽签结果，不播放")
     parser.add_argument("--explain", action="store_true",
@@ -157,19 +192,25 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     rng = random.Random(args.seed) if args.seed is not None else None
+
     try:
-        effect = manifest.pick(items, forced=args.effect, rng=rng)
-    except manifest.AssetError as error:
-        print(error, file=sys.stderr)
+        sends = parse_sends(args.words, args.repeat)
+    except ValueError as bad:
+        print(f"不认识「{bad.args[0]}」：位置参数只能写 mj 串（如 mjmjmj）、hang 或 pose。",
+              file=sys.stderr)
         return 2
 
     with_sound, sound_reason = resolve_audio(args.audio, args.no_audio, invoked_name())
 
     if args.pick_only:
-        print(f"{effect['id']}\t{effect.get('label', '')}")
+        # 连发时一行一次，脚本里好数
+        for send in sends:
+            effect = manifest.pick(items, forced=send, rng=rng)
+            print(f"{effect['id']}\t{effect.get('label', '')}")
         return 0
 
     if args.explain:
+        effect = manifest.pick(items, forced=sends[0], rng=rng)
         wav = base / effect["wav"] if effect.get("wav") else None
         player = audio.find_player()
         print(f"effect : {effect['id']} ({effect.get('label', '')})")
@@ -177,40 +218,54 @@ def main(argv: list[str] | None = None) -> int:
         print(f"audio  : {wav.name if wav else '无'} "
               f"({'存在' if wav and wav.exists() else '缺失'})")
         print(f"player : {os.path.basename(player[0]) if player else '未找到播放器（会静音）'}")
+        print(f"sends  : {len(sends)} 次连发")
         print(f"frames : {effect['frames']}")
         print(f"assets : {base}")
         return 0
 
-    fps = args.fps or float(effect.get("fps") or 30)
-
-    if args.window:
-        if window.play(effect, base, opacity=args.opacity, audio=with_sound):
-            return 0
-        print("透明窗口不可用（缺少 PyGObject/cairo 或没有合成器），改为在终端里播放。",
-              file=sys.stderr)
-
-    cached = effect.get("cache")
-    if not cached:
-        print("素材缺少终端帧包，请执行：python3 scripts/build_assets.py", file=sys.stderr)
-        return 2
-
     if not sys.stdout.isatty() and not args.force:
-        # 被重定向时不要往管道里塞几兆转义序列
-        print(f"{effect.get('label', effect['id'])}")
+        # 被重定向时不要往管道里塞几兆转义序列，只报一下会播什么
+        labels = []
+        for send in sends:
+            picked = manifest.pick(items, forced=send, rng=rng)
+            labels.append(picked.get("label", picked["id"]))
+        print("、".join(labels))
         return 0
 
-    entry, blob = manifest.load_terminal(base, effect["id"], args.theme)
-    stage = term.TerminalStage(entry, blob, theme=args.theme)
-    align = "top" if effect["id"] == "hang" else "center"
-    sound = audio.Sound(base / effect["wav"], enabled=with_sound)
-    try:
-        with sound:
-            stage.play(width=args.size, align=align, fps=fps)
-    except BrokenPipeError:
-        # 例如 `mj | head`：下游先关了管道，安静退出，别在收尾时再刷一段报错
-        silence_stdout()
-    except OSError:
-        return 1
+    player = audio.find_player()
+    loaded: dict[str, tuple] = {}
+    use_window = args.window
+
+    for send in sends:
+        effect = manifest.pick(items, forced=send, rng=rng)
+        fps = args.fps or float(effect.get("fps") or 30)
+
+        if use_window:
+            if window.play(effect, base, opacity=args.opacity, audio=with_sound):
+                continue
+            use_window = False          # 失败一次就够了，后面都走终端
+            print("透明窗口不可用（缺少 PyGObject/cairo 或没有合成器），改为在终端里播放。",
+                  file=sys.stderr)
+
+        if not effect.get("cache"):
+            print("素材缺少终端帧包，请执行：python3 scripts/build_assets.py", file=sys.stderr)
+            return 2
+
+        if effect["id"] not in loaded:
+            loaded[effect["id"]] = manifest.load_terminal(base, effect["id"], args.theme)
+        entry, blob = loaded[effect["id"]]
+        stage = term.TerminalStage(entry, blob, theme=args.theme)
+        align = "top" if effect["id"] == "hang" else "center"
+        sound = audio.Sound(base / effect["wav"], enabled=with_sound)
+        try:
+            with sound:
+                stage.play(width=args.size, align=align, fps=fps)
+        except BrokenPipeError:
+            # 例如 `mj | head`：下游先关了管道，安静退出，别在收尾时再刷一段报错
+            silence_stdout()
+            return 0
+        except OSError:
+            return 1
     return 0
 
 

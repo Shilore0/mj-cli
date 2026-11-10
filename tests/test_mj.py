@@ -194,6 +194,40 @@ if __name__ == "__main__":
     unittest.main()
 
 
+class TestSends(unittest.TestCase):
+    """连发：写几个 mj 就播几次。"""
+
+    def test_burst_in_one_word(self):
+        from mj.cli import parse_sends
+
+        self.assertEqual(parse_sends(["mjmjmj"]), [None, None, None])
+        self.assertEqual(parse_sends(["MJMJ"]), [None, None])
+
+    def test_burst_by_separate_words(self):
+        from mj.cli import parse_sends
+
+        self.assertEqual(parse_sends(["mj", "mj", "mj"]), [None, None, None])
+
+    def test_forced_effect(self):
+        from mj.cli import parse_sends
+
+        self.assertEqual(parse_sends(["hang"]), ["hang"])
+        self.assertEqual(parse_sends(["POSE"]), ["pose"])
+
+    def test_default_and_repeat(self):
+        from mj.cli import parse_sends
+
+        self.assertEqual(parse_sends([]), [None])
+        self.assertEqual(parse_sends(["mjmj"], 2), [None] * 4)
+        self.assertEqual(parse_sends(["mj"], 0), [None])   # 非法值当 1 次
+
+    def test_unknown_word(self):
+        from mj.cli import parse_sends
+
+        with self.assertRaises(ValueError):
+            parse_sends(["xyz"])
+
+
 class TestRpmHeader(unittest.TestCase):
     """rpm 头必须是标准 region 结构，否则 rpm 会报 invalid signature tag。"""
 

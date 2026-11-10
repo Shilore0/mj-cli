@@ -94,8 +94,8 @@ Windows 上的几点差别：
 从 [Releases](https://github.com/Shilore0/mj-cli/releases) 下载，或用仓库里 `dist/` 的包：
 
 ```bash
-sudo dpkg -i mj-cli_1.6-1_all.deb      # Debian / Ubuntu / Mint
-sudo rpm -ivh mj-cli-1.6-1.noarch.rpm  # Fedora / RHEL / Rocky / openSUSE
+sudo dpkg -i mj-cli_1.7-1_all.deb      # Debian / Ubuntu / Mint
+sudo rpm -ivh mj-cli-1.7-1.noarch.rpm  # Fedora / RHEL / Rocky / openSUSE
 ```
 
 装完 `/usr/bin/mj`、`/usr/bin/MJ` 都指向 `/usr/lib/mj-cli/bin/mj`，
@@ -134,8 +134,8 @@ mj --version
 **deb / rpm**
 
 ```bash
-sudo dpkg -i mj-cli_1.6-1_all.deb          # 直接装新包就是升级
-sudo rpm -Uvh mj-cli-1.6-1.noarch.rpm
+sudo dpkg -i mj-cli_1.7-1_all.deb          # 直接装新包就是升级
+sudo rpm -Uvh mj-cli-1.7-1.noarch.rpm
 ```
 
 > 涉及画面或素材的更新（例如 1.4 修掉的蛛丝）必须连 `assets/` 一起换：
@@ -190,6 +190,9 @@ ls /usr/lib/mj-cli 2>/dev/null || echo 目录已删除
 ```console
 $ mj                 # 抽一次：50% 倒挂 / 50% 耍帅
 $ MJ                 # 同上，大写也认
+$ mj mjmjmj          # 连发：写了 3 个 mj，就连续播 3 次
+$ mj mj mj           # 同上，分开写也算 3 次
+$ mj --repeat 3      # 也是连播 3 次
 $ mj hang            # 不看抽签结果，直接放「倒挂」
 $ mj pose            # 直接放「耍帅」
 $ mj --audio         # 小写 mj 默认静音，这样才出声
@@ -205,7 +208,9 @@ $ mj --where         # 打印装在哪：程序目录、启动器、素材、Pyt
 
 | 参数 | 说明 |
 |---|---|
-| `hang` / `pose` | 指定彩蛋，跳过随机 |
+| `mj` 串（如 `mjmjmj`） | 连发，每个 `mj` 播一次（大小写都行，`MJMJ` = 2 次） |
+| `hang` / `pose` | 指定彩蛋，跳过随机；写几次就播几次 |
+| `--repeat N` / `-n N` | 把整串再重复 N 遍 |
 | `--list` | 列出彩蛋、帧数、尺寸档位 |
 | `--pick-only` | 只输出抽到的结果（脚本/测试友好） |
 | `--explain` | 不播放，打印彩蛋、声音开关及理由、音轨与播放器等 |
@@ -220,7 +225,20 @@ $ mj --where         # 打印装在哪：程序目录、启动器、素材、Pyt
 | `--seed N` | 固定随机种子，仅测试用 |
 | `--force` | 输出被重定向时也照样渲染 |
 
-被重定向（`mj | cat`）时不会往管道里塞几兆转义序列，只打印一行名字。
+被重定向（`mj | cat`）时不会往管道里塞几兆转义序列，只打印名字（连发时用 `、` 连起来）。
+
+### 连发
+
+跟抖音里发消息一样，**写几个 `mj` 就播几次**，每次独立抽签（可能连着两次都是「倒挂」）：
+
+```console
+$ mj mjmj        # 2 次
+$ mj mjmjmj      # 3 次
+$ mj MJ MJ       # 2 次，且带音乐（大写）
+$ mj --repeat 5  # 5 次
+```
+
+`--pick-only` 连发时一行输出一次（`wc -l` 就是次数），`--explain` 会显示 `sends: N 次连发`。
 
 ## 声音：大小写决定
 
@@ -346,8 +364,8 @@ mj-cli/
 
 | 文件 | 适用 |
 |---|---|
-| `mj-cli_1.6-1_all.deb` | Debian / Ubuntu / Mint / Kali … |
-| `mj-cli-1.6-1.noarch.rpm` | Fedora / RHEL / Rocky / Alma / openSUSE … |
+| `mj-cli_1.7-1_all.deb` | Debian / Ubuntu / Mint / Kali … |
+| `mj-cli-1.7-1.noarch.rpm` | Fedora / RHEL / Rocky / Alma / openSUSE … |
 
 打包器是手写的（`ar` + `tar` + `cpio` + RPM header），不需要 `dpkg-deb`、
 `rpmbuild`、`fpm`，Windows 上也能出包：

@@ -106,7 +106,7 @@ def man_page(ver: str) -> bytes:
 mj \\- 命令行版「透明蜘蛛侠」彩蛋
 .SH SYNOPSIS
 .B mj
-[\\fIhang\\fR|\\fIpose\\fR] [\\fI选项\\fR]
+[\\fImj\\fR...] [\\fIhang\\fR|\\fIpose\\fR] [\\fI选项\\fR]
 .br
 .B MJ
 [\\fI选项\\fR]
@@ -116,6 +116,17 @@ mj \\- 命令行版「透明蜘蛛侠」彩蛋
 退出（包括 Ctrl+C）后恢复原屏幕。
 .PP
 帧在构建素材时就预渲染成 ANSI 字符串，运行期只做解压与输出，几乎不占 CPU。
+.SH 连发
+位置参数里每出现一次 mj 就播一次，跟抖音里连发消息一样：
+.B mj mjmjmj
+与
+.B mj mj mj
+都是 3 次，
+.B mj MJ MJ
+是 2 次且带音乐。每次独立抽签，允许连着两次同一个彩蛋。
+.B \\-\\-repeat N
+把整串再重复 N 遍。
+.PP
 .SH 声音与大小写
 默认行为由调用名的大小写决定：
 .TP
@@ -138,6 +149,9 @@ mj \\- 命令行版「透明蜘蛛侠」彩蛋
 .TP
 .B pose
 强制播放「耍帅」。
+.TP
+.B \\-\\-repeat \\fIN\\fR, \\-n \\fIN\\fR
+把整串连发再重复 N 遍（默认 1）。
 .TP
 .B \\-\\-list
 列出可用彩蛋、帧数、音轨与尺寸档位后退出。
