@@ -220,11 +220,19 @@ mj-cli maintainers。素材与角色权利归各自权利人，本项目是非�
     return buffer.getvalue()
 
 
+# 这些目录由发行版的 filesystem 包拥有，我们只往里写文件，不声明目录本身
+SYSTEM_DIRS = {
+    "/", "/bin", "/sbin", "/lib", "/lib64", "/etc", "/var", "/usr",
+    "/usr/bin", "/usr/sbin", "/usr/lib", "/usr/lib64",
+    "/usr/share", "/usr/share/doc", "/usr/share/man",
+}
+
+
 def collect(ver: str) -> list[Entry]:
     entries: list[Entry] = []
-    dirs: set[str] = {"/usr", "/usr/bin", "/usr/lib", "/usr/share",
-                      "/usr/share/doc", DOCDIR, "/usr/share/man", MANDIR, LIBDIR,
-                      f"{LIBDIR}/bin", f"{LIBDIR}/assets"}
+    # 只声明「我们自己拥有」的目录；/usr、/usr/bin、/usr/lib、/usr/share 之类
+    # 属于 filesystem 包，重复声明会让 rpm 报 file conflicts。
+    dirs: set[str] = {DOCDIR, LIBDIR, f"{LIBDIR}/bin", f"{LIBDIR}/assets"}
 
     def add_file(rel_source: Path, target: str, mode: int = 0o644) -> None:
         entries.append(Entry(target, "file", mode, data=rel_source.read_bytes()))
@@ -254,7 +262,7 @@ def collect(ver: str) -> list[Entry]:
 
     # 目录条目补齐（cpio 里要有，deb 里也要有）
     for directory in dirs:
-        if directory in ("/", ""):
+        if directory in ("/", "") or directory in SYSTEM_DIRS:
             continue
         entries.append(Entry(directory, "dir", 0o755))
 
@@ -551,9 +559,9 @@ def build_rpm(entries: list[Entry], ver: str, release: int) -> Path:
 
     signature = rpm_header([
         (1000, RPM_INT32, [len(body)]),                  # RPMSIGTAG_SIZE
-        (1004, RPM_BIN, hashlib.md5(body).digest()),     # RPMSIGTAG_MD5
-        (269, RPM_STRING, hashlib.sha1(body).hexdigest()),
-        (273, RPM_STRING, hashlib.sha256(body).hexdigest()),
+        (1004, RPM_BIN, hashlib.md5(body).digest()),     # RPMSIGTAG_MD5：头+载荷
+        (269, RPM_STRING, hashlib.sha1(header).hexdigest()),    # 只算主头
+        (273, RPM_STRING, hashlib.sha256(header).hexdigest()),  # 只算主头
         (1007, RPM_INT32, [len(payload)]),               # RPMSIGTAG_PAYLOADSIZE
     ], region_tag=62)                                        # HEADERSIGNATURES
     while (len(signature) + 96) % 8:
@@ -652,8 +660,12 @@ def verify_rpm(path: Path, entries: list[Entry]) -> None:
     assert main[TAG_PAYLOADFORMAT][1] == "cpio"
     assert main[TAG_PAYLOADCOMPRESSOR][1] == "xz"
     body = raw[after_sig:]
-    assert signature[1004][1] == hashlib.md5(body).digest(), "MD5 不匹配"
-    assert signature[269][1] == hashlib.sha1(body).hexdigest(), "SHA1 不匹配"
+    main_header = raw[after_sig:payload_start]        # 主头字节（不含载荷）
+    assert signature[1004][1] == hashlib.md5(body).digest(), "MD5（头+载荷）不匹配"
+    assert signature[269][1] == hashlib.sha1(main_header).hexdigest(), "SHA1（主头）不匹配"
+    assert signature[273][1] == hashlib.sha256(main_header).hexdigest(), "SHA256（主头）不匹配"
+    for system_dir in ("/usr", "/usr/bin", "/usr/lib", "/usr/share"):
+        assert system_dir not in {e.path for e in entries}, f"不该声明 {system_dir}（属于 filesystem 包）"
     assert main[TAG_PAYLOADDIGEST][1][0] == hashlib.sha256(payload).hexdigest(), "载荷摘要不匹配"
 
     unpacked = lzma.decompress(payload)

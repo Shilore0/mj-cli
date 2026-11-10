@@ -36,7 +36,7 @@ if command -v dpkg >/dev/null; then
 
   step "包信息"
   need "dpkg 状态为已安装" "dpkg -s mj-cli | grep -q 'Status: install ok installed'"
-  need "版本 1.7-1" "dpkg-query -W -f='\${Version}' mj-cli | grep -qx 1.7-1"
+  need "版本 1.8-1" "dpkg-query -W -f='\${Version}' mj-cli | grep -qx 1.8-1"
   need "架构 all" "dpkg-query -W -f='\${Architecture}' mj-cli | grep -qx all"
   need "依赖声明包含 python3" "dpkg -s mj-cli | grep -q 'Depends:.*python3'"
   need "文件清单包含 /usr/lib/mj-cli/mj/cli.py" "dpkg -L mj-cli | grep -qx /usr/lib/mj-cli/mj/cli.py"
@@ -47,7 +47,7 @@ if command -v dpkg >/dev/null; then
   step "运行"
   need "/usr/bin/mj 存在且可执行" "test -x /usr/bin/mj"
   need "/usr/bin/MJ 指向同一目标" "test \"\$(readlink -f /usr/bin/MJ)\" = \"\$(readlink -f /usr/bin/mj)\""
-  need "mj --version" "mj --version | grep -q '1.7'"
+  need "mj --version" "mj --version | grep -q '1.8'"
   need "mj --list 有两个彩蛋" "mj --list | grep -q hang && mj --list | grep -q pose"
   need "mj --pick-only 输出合法" "mj --pick-only | grep -qE '^(hang|pose)'"
   need "连发 mjmjmj 播 3 次" "[ \"\$(mj --pick-only mjmjmj | wc -l)\" -eq 3 ]"
@@ -95,7 +95,7 @@ elif command -v rpm >/dev/null; then
 
   step "包信息"
   need "已安装" "rpm -q mj-cli"
-  need "版本 1.7" "rpm -q --qf '%{VERSION}' mj-cli | grep -qx 1.7"
+  need "版本 1.8" "rpm -q --qf '%{VERSION}' mj-cli | grep -qx 1.8"
   need "架构 noarch" "rpm -q --qf '%{ARCH}' mj-cli | grep -qx noarch"
   need "文件清单包含 /usr/lib/mj-cli/mj/cli.py" "rpm -ql mj-cli | grep -qx /usr/lib/mj-cli/mj/cli.py"
 
@@ -107,7 +107,7 @@ elif command -v rpm >/dev/null; then
   fi
 
   step "运行"
-  need "mj --version" "mj --version | grep -q '1.7'"
+  need "mj --version" "mj --version | grep -q '1.8'"
   need "mj --list 有两个彩蛋" "mj --list | grep -q hang && mj --list | grep -q pose"
   need "mj --pick-only 输出合法" "mj --pick-only | grep -qE '^(hang|pose)'"
   need "连发 mjmjmj 播 3 次" "[ \"\$(mj --pick-only mjmjmj | wc -l)\" -eq 3 ]"

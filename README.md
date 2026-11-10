@@ -94,8 +94,8 @@ Windows 上的几点差别：
 从 [Releases](https://github.com/Shilore0/mj-cli/releases) 下载，或用仓库里 `dist/` 的包：
 
 ```bash
-sudo dpkg -i mj-cli_1.7-1_all.deb      # Debian / Ubuntu / Mint
-sudo rpm -ivh mj-cli-1.7-1.noarch.rpm  # Fedora / RHEL / Rocky / openSUSE
+sudo dpkg -i mj-cli_1.8-1_all.deb      # Debian / Ubuntu / Mint
+sudo rpm -ivh mj-cli-1.8-1.noarch.rpm  # Fedora / RHEL / Rocky / openSUSE
 ```
 
 装完 `/usr/bin/mj`、`/usr/bin/MJ` 都指向 `/usr/lib/mj-cli/bin/mj`，
@@ -134,8 +134,8 @@ mj --version
 **deb / rpm**
 
 ```bash
-sudo dpkg -i mj-cli_1.7-1_all.deb          # 直接装新包就是升级
-sudo rpm -Uvh mj-cli-1.7-1.noarch.rpm
+sudo dpkg -i mj-cli_1.8-1_all.deb          # 直接装新包就是升级
+sudo rpm -Uvh mj-cli-1.8-1.noarch.rpm
 ```
 
 > 涉及画面或素材的更新（例如 1.4 修掉的蛛丝）必须连 `assets/` 一起换：
@@ -364,8 +364,8 @@ mj-cli/
 
 | 文件 | 适用 |
 |---|---|
-| `mj-cli_1.7-1_all.deb` | Debian / Ubuntu / Mint / Kali … |
-| `mj-cli-1.7-1.noarch.rpm` | Fedora / RHEL / Rocky / Alma / openSUSE … |
+| `mj-cli_1.8-1_all.deb` | Debian / Ubuntu / Mint / Kali … |
+| `mj-cli-1.8-1.noarch.rpm` | Fedora / RHEL / Rocky / Alma / openSUSE … |
 
 打包器是手写的（`ar` + `tar` + `cpio` + RPM header），不需要 `dpkg-deb`、
 `rpmbuild`、`fpm`，Windows 上也能出包：

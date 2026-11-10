@@ -2,6 +2,18 @@
 
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循语义化版本。
 
+## [1.8] - 2026-11-10
+
+### 修复
+
+- **rpm 事务检查失败：`Header SHA256 digest: BAD`**。签名头里的 SHA1(269)/SHA256(273)
+  算错了对象——按 rpm 的约定它们只覆盖**主头**，而我算成了「主头 + 载荷」（那是 MD5(1004)
+  的算法）。三个摘要现在都对得上。
+- **`file /usr/bin 与 filesystem 包冲突`**。不再把 `/usr`、`/usr/bin`、`/usr/lib`、
+  `/usr/share`、`/usr/share/man` 这些属于 `filesystem` 包的目录声明成自己的，
+  只声明 `/usr/lib/mj-cli` 与 `/usr/share/doc/mj-cli`；文件与软链照常安装。
+- 两个问题都补了自检断言（摘要必须匹配、系统目录不得出现在条目里）。
+
 ## [1.7] - 2026-11-10
 
 ### 新增
