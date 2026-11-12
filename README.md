@@ -89,13 +89,41 @@ Windows 上的几点差别：
 - **中文乱码**：直接看没问题；把输出接到管道（`|`）时 PowerShell 会用 GBK 解码 UTF-8，
   先执行一次 `[Console]::OutputEncoding = [Text.Encoding]::UTF8`。
 
+### 纯命令行安装（打包版）
+
+不碰网页，从下载到安装两条命令搞定（`latest` 链接永远指向最新发布版）：
+
+Debian / Ubuntu / Mint：
+
+```bash
+curl -fsSL -o /tmp/mj-cli.deb \
+  https://github.com/Shilore0/mj-cli/releases/latest/download/mj-cli-latest_all.deb
+sudo dpkg -i /tmp/mj-cli.deb || sudo apt-get install -f
+mj --version
+```
+
+Fedora / RHEL / Rocky / openEuler：
+
+```bash
+sudo dnf install https://github.com/Shilore0/mj-cli/releases/latest/download/mj-cli-latest.noarch.rpm
+mj --version
+```
+
+想装固定版本，把 `latest/download` 换成 `download/v版本号` 并用带版本号的文件名：
+
+```bash
+curl -fsSL -o /tmp/mj-cli.rpm \
+  https://github.com/Shilore0/mj-cli/releases/download/v1.9/mj-cli-1.9-1.noarch.rpm
+sudo dnf install /tmp/mj-cli.rpm
+```
+
 ### deb / rpm
 
 从 [Releases](https://github.com/Shilore0/mj-cli/releases) 下载，或用仓库里 `dist/` 的包：
 
 ```bash
-sudo dpkg -i mj-cli_1.8-1_all.deb      # Debian / Ubuntu / Mint
-sudo rpm -ivh mj-cli-1.8-1.noarch.rpm  # Fedora / RHEL / Rocky / openSUSE
+sudo dpkg -i mj-cli_1.9-1_all.deb      # Debian / Ubuntu / Mint
+sudo rpm -ivh mj-cli-1.9-1.noarch.rpm  # Fedora / RHEL / Rocky / openSUSE
 ```
 
 装完 `/usr/bin/mj`、`/usr/bin/MJ` 都指向 `/usr/lib/mj-cli/bin/mj`，
@@ -134,8 +162,8 @@ mj --version
 **deb / rpm**
 
 ```bash
-sudo dpkg -i mj-cli_1.8-1_all.deb          # 直接装新包就是升级
-sudo rpm -Uvh mj-cli-1.8-1.noarch.rpm
+sudo dpkg -i mj-cli_1.9-1_all.deb          # 直接装新包就是升级
+sudo rpm -Uvh mj-cli-1.9-1.noarch.rpm
 ```
 
 > 涉及画面或素材的更新（例如 1.4 修掉的蛛丝）必须连 `assets/` 一起换：
@@ -364,8 +392,8 @@ mj-cli/
 
 | 文件 | 适用 |
 |---|---|
-| `mj-cli_1.8-1_all.deb` | Debian / Ubuntu / Mint / Kali … |
-| `mj-cli-1.8-1.noarch.rpm` | Fedora / RHEL / Rocky / Alma / openSUSE … |
+| `mj-cli_1.9-1_all.deb` | Debian / Ubuntu / Mint / Kali … |
+| `mj-cli-1.9-1.noarch.rpm` | Fedora / RHEL / Rocky / Alma / openSUSE … |
 
 打包器是手写的（`ar` + `tar` + `cpio` + RPM header），不需要 `dpkg-deb`、
 `rpmbuild`、`fpm`，Windows 上也能出包：

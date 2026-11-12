@@ -2,6 +2,16 @@
 
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循语义化版本。
 
+## [1.9] - 2026-11-12
+
+### 新增
+
+- Release 附加两个**固定文件名**的别名包（`mj-cli-latest_all.deb`、
+  `mj-cli-latest.noarch.rpm`），`releases/latest/download/` 的链接从此永远指向最新版，
+  README 里的纯命令行安装不用再跟着改版本号。
+- README 新增「纯命令行安装（打包版）」小节：Debian 系与 RPM 系各一条从下载到安装的命令，
+  附固定版本的下载写法。
+
 ## [1.8] - 2026-11-10
 
 ### 修复
