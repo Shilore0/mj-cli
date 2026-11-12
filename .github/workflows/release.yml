@@ -45,8 +45,8 @@ jobs:
           # README 里的「纯命令行安装」用的是 latest/download/<固定名>，
           # 版本号会变，所以每次发版都额外传一份固定名字的拷贝。
           mkdir -p dist-latest
-          cp dist/mj-cli_*_all.deb     dist-latest/mj-cli-latest_all.deb
-          cp dist/mj-cli-*_noarch.rpm  dist-latest/mj-cli-latest.noarch.rpm
+          cp dist/mj-cli_*.deb         dist-latest/mj-cli-latest_all.deb
+          cp dist/mj-cli-*.noarch.rpm  dist-latest/mj-cli-latest.noarch.rpm
           ls -l dist-latest
 
       - name: 创建 Release 并上传包
